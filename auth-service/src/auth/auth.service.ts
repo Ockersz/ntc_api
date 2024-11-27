@@ -1,26 +1,71 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+} from '@aws-sdk/lib-dynamodb';
+import { Inject, Injectable } from '@nestjs/common';
+import { v4 as uuid } from 'uuid';
+import { CreateUserDto } from './dto/create-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return `This action adds a new auth ${createAuthDto}`;
+  constructor(
+    @Inject('DYNAMO_DB')
+    private readonly dynamoDbClient: DynamoDBDocumentClient,
+  ) {}
+
+  private readonly TABLE_NAME = 'Users';
+
+  async register(createUserDto: CreateUserDto): Promise<User> {
+    const user: User = {
+      userId: uuid(),
+      username: createUserDto.username,
+      email: createUserDto.email,
+      passwordHash: await this.hashPassword(createUserDto.password),
+      createdAt: new Date().toISOString(),
+    };
+
+    await this.dynamoDbClient.send(
+      new PutCommand({
+        TableName: this.TABLE_NAME,
+        Item: user,
+      }),
+    );
+
+    return user;
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async login(loginUserDto: LoginUserDto): Promise<User | null> {
+    const result = await this.dynamoDbClient.send(
+      new GetCommand({
+        TableName: this.TABLE_NAME,
+        Key: { username: loginUserDto.username },
+      }),
+    );
+
+    const user = result.Item as User;
+    if (
+      user &&
+      (await this.validatePassword(loginUserDto.password, user.passwordHash))
+    ) {
+      return user;
+    }
+
+    return null;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  private async hashPassword(password: string): Promise<string> {
+    // Add bcrypt or similar for secure hashing
+    return password; // Placeholder
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth ${updateAuthDto}`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  private async validatePassword(
+    password: string,
+    hash: string,
+  ): Promise<boolean> {
+    // Add bcrypt or similar for password validation
+    return password === hash; // Placeholder
   }
 }
