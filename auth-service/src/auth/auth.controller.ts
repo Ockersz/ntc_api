@@ -1,4 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { DataSanitizer } from 'src/common/dataSanitizer';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -9,7 +10,8 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
+    const sanitizedUser: CreateUserDto = DataSanitizer.sanitize(createUserDto);
+    return this.authService.register(sanitizedUser);
   }
 
   @Post('login')

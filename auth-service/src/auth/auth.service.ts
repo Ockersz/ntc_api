@@ -1,58 +1,15 @@
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  PutCommand,
-} from '@aws-sdk/lib-dynamodb';
-import { Inject, Injectable } from '@nestjs/common';
-import { v4 as uuid } from 'uuid';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from './entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @Inject('DYNAMO_DB')
-    private readonly dynamoDbClient: DynamoDBDocumentClient,
-  ) {}
+  constructor() {}
 
-  private readonly TABLE_NAME = 'Users';
-
-  async register(createUserDto: CreateUserDto): Promise<User> {
-    const user: User = {
-      userId: uuid(),
-      username: createUserDto.username,
-      email: createUserDto.email,
-      passwordHash: await this.hashPassword(createUserDto.password),
-      createdAt: new Date().toISOString(),
-    };
-
-    await this.dynamoDbClient.send(
-      new PutCommand({
-        TableName: this.TABLE_NAME,
-        Item: user,
-      }),
-    );
-
-    return user;
-  }
+  async register(createUserDto: CreateUserDto) {}
 
   async login(loginUserDto: LoginUserDto): Promise<User | null> {
-    const result = await this.dynamoDbClient.send(
-      new GetCommand({
-        TableName: this.TABLE_NAME,
-        Key: { username: loginUserDto.username },
-      }),
-    );
-
-    const user = result.Item as User;
-    if (
-      user &&
-      (await this.validatePassword(loginUserDto.password, user.passwordHash))
-    ) {
-      return user;
-    }
-
     return null;
   }
 
