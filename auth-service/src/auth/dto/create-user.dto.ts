@@ -1,9 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsString } from 'class-validator';
+import { IsPassword, IsUsername } from 'src/common/dataValidator';
 
 export class CreateUserDto {
-  @IsString({ message: 'Username must be a string' })
-  @IsNotEmpty()
-  username: string;
+  @IsString({ message: 'First name must be a string' })
+  firstName: string;
+
+  @IsString({ message: 'Last name must be a string' })
+  lastName: string;
 
   @IsEmail(
     {
@@ -15,6 +18,11 @@ export class CreateUserDto {
   )
   email: string;
 
-  @IsString({ message: 'Password must be a string' })
+  @IsUsername({
+    message: 'Username must be all lowercase and at least 7 characters long',
+  })
+  username: string;
+
+  @IsPassword()
   password: string;
 }
