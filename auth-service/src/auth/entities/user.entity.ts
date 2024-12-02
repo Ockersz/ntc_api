@@ -5,7 +5,7 @@ export class User {
   @PrimaryGeneratedColumn()
   userId: number;
 
-  @Column({ length: 50 })
+  @Column({ length: 50, name: 'firstName' })
   firstName: string;
 
   @Column({ length: 50 })
@@ -22,4 +22,7 @@ export class User {
 
   @Column({ type: 'tinyint', default: 1 })
   status: number; // Active (1) or Inactive (0)
+
+  @Column()
+  refreshToken: string;
 }
