@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +11,7 @@ import * as bcryp from 'bcrypt';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { User } from './entities/user.entity';
 @Injectable()
 export class AuthService {
@@ -66,12 +69,39 @@ export class AuthService {
       { expiresIn: '1d' },
     );
 
-    await this.usersRepository.update(user.userId, { refreshToken });
-
     const payload = { sub: user.userId, username: user.username };
     const accessToken = await this.jwtService.signAsync(payload);
 
     return { accessToken, refreshToken };
+  }
+
+  async refreshToken(refreshTokenDto: RefreshTokenDto) {
+    try {
+      // Verify the refresh token
+      const payload = this.jwtService.verify(refreshTokenDto.refreshToken, {
+        secret: process.env.REFRESH_SECRET,
+      });
+
+      // Generate a new access token and refresh token
+      const newAccessToken = this.jwtService.sign(
+        { sub: payload.sub, username: payload.username },
+        { expiresIn: '15m' },
+      );
+
+      const newRefreshToken = this.jwtService.sign(
+        { sub: payload.sub, username: payload.username },
+        { expiresIn: '7d', secret: process.env.REFRESH_SECRET },
+      );
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch (error) {
+      const logger = new Logger('AuthService');
+      logger.error(error.message);
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 
   private async hashPassword(password: string): Promise<string> {
