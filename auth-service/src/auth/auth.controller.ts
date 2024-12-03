@@ -20,14 +20,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto) {
-    // Sanitize user input
     const sanitizedUser: LoginUserDto = DataSanitizer.sanitize(loginUserDto);
 
-    // Get accessToken and refreshToken from AuthService
     const { accessToken, refreshToken } =
       await this.authService.login(sanitizedUser);
 
-    // Return tokens in the response body
     return {
       message: 'Login successful',
       accessToken,
@@ -39,15 +36,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    // Sanitize refresh token
     const sanitizedRefreshToken = DataSanitizer.sanitize(refreshTokenDto);
 
-    // Get new tokens from AuthService
     const { accessToken, refreshToken } = await this.authService.refreshToken(
       sanitizedRefreshToken,
     );
 
-    // Return new tokens in the response body
     return {
       message: 'Tokens refreshed successfully',
       accessToken,
