@@ -4,6 +4,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
+import { Role } from './roles/entities/role.entity';
+import { RoleAccess } from './roles/entities/roles-access.entity';
+import { UserRole } from './roles/entities/user-role.entity';
+import { RolesModule } from './roles/roles.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -12,19 +17,8 @@ import { User } from './auth/entities/user.entity';
     }),
     ThrottlerModule.forRoot([
       {
-        name: 'short',
-        ttl: 1000,
-        limit: 3,
-      },
-      {
-        name: 'medium',
-        ttl: 10000,
-        limit: 20,
-      },
-      {
-        name: 'long',
         ttl: 60000,
-        limit: 100,
+        limit: 10,
       },
     ]),
     TypeOrmModule.forRoot({
@@ -34,10 +28,12 @@ import { User } from './auth/entities/user.entity';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User],
-      synchronize: true,
+      entities: [User, Role, UserRole, RoleAccess],
+      synchronize: false,
     }),
     AuthModule,
+    UsersModule,
+    RolesModule,
   ],
 })
 export class AppModule {}
