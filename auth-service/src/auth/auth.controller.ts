@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { DataSanitizer } from 'src/common/dataSanitizer';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,6 +19,7 @@ export class AuthController {
 
   // User login
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto) {
     const sanitizedUser: LoginUserDto = DataSanitizer.sanitize(loginUserDto);
