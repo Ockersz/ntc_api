@@ -1,8 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserNtcDto } from 'src/auth/dto/create-ntc-user.dto';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { User } from 'src/auth/entities/user.entity';
+import { Common } from 'src/common/common';
 import { UserRole } from 'src/roles/entities/user-role.entity';
 import { Repository } from 'typeorm';
 import { ShowUserDto } from './dto/show-user.dto';
@@ -13,11 +19,55 @@ export class UsersService {
     @InjectRepository(UserRole)
     private userRoleRepository: Repository<UserRole>,
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private usersRepository: Repository<User>,
   ) {}
 
+  async create(createUserDto: CreateUserNtcDto): Promise<User> {
+    const user = await this.usersRepository.findOne({
+      where: { username: createUserDto.username },
+    });
+
+    if (user) {
+      throw new ConflictException('Username already exists');
+    }
+
+    const email = await this.usersRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+
+    if (email) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const createdUser = await this.usersRepository.save(
+      this.usersRepository.create({
+        ...createUserDto,
+        password: await Common.hashPassword(createUserDto.password),
+      }),
+    );
+
+    if (createUserDto.roles) {
+      const roles = await this.userRoleRepository.findByIds(
+        createUserDto.roles,
+      );
+
+      if (roles.length !== createUserDto.roles.length) {
+        throw new NotFoundException('Role not found');
+      }
+
+      const userRoles = roles.map((role) => {
+        return this.userRoleRepository.create({
+          role,
+          userId: createdUser.userId,
+        });
+      });
+    }
+
+    return createdUser;
+  }
+
   async findOne(id: number): Promise<ShowUserDto> {
-    return (await this.userRepository.findOne({
+    return (await this.usersRepository.findOne({
       where: { userId: id },
     })) as ShowUserDto;
   }
