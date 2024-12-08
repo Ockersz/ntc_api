@@ -2,26 +2,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
+import { User } from 'src/auth/entities/user.entity';
 import { UserRole } from 'src/roles/entities/user-role.entity';
 import { Repository } from 'typeorm';
+import { ShowUserDto } from './dto/show-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserRole)
     private userRoleRepository: Repository<UserRole>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
-    throw new NotFoundException('Method not found');
-  }
-
-  findAll() {
-    throw new NotFoundException('Method not found');
-  }
-
-  findOne(id: number) {
-    throw new NotFoundException('Method not found');
+  async findOne(id: number): Promise<ShowUserDto> {
+    return (await this.userRepository.findOne({
+      where: { userId: id },
+    })) as ShowUserDto;
   }
 
   async findRoles(id: number) {
@@ -35,10 +33,6 @@ export class UsersService {
   }
 
   update(id: number, updateUserDto: CreateUserDto) {
-    throw new NotFoundException('Method not found');
-  }
-
-  remove(id: number) {
     throw new NotFoundException('Method not found');
   }
 }
