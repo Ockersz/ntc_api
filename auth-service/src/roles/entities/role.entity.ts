@@ -16,4 +16,7 @@ export class Role {
 
   @Column('tinyint', { name: 'status', default: 1 })
   status: number;
+
+  @Column('tinyint', { name: 'default', default: 0 })
+  default: number;
 }
