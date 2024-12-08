@@ -22,7 +22,4 @@ export class User {
 
   @Column({ type: 'tinyint', default: 1 })
   status: number; // Active (1) or Inactive (0)
-
-  @Column()
-  refreshToken: string;
 }
