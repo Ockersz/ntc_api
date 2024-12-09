@@ -19,4 +19,15 @@ export class Role {
 
   @Column('tinyint', { name: 'default', default: 0 })
   default: number;
+
+  @Column({
+    type: 'text',
+    name: 'access',
+    transformer: {
+      to: (value: string[]) => value.join(','), // Serialize to comma-separated string
+      from: (value: string) => value.split(','), // Deserialize to array
+    },
+    default: '',
+  })
+  access: string[];
 }
