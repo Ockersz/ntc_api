@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRoleAccessDto } from './dto/create-role-access.dto';
@@ -12,21 +16,64 @@ export class RoleAccessService {
     private roleAccessRepository: Repository<RoleAccess>,
   ) {}
 
-  create(createRoleAccessDto: CreateRoleAccessDto) {}
+  async create(createRoleAccessDto: CreateRoleAccessDto) {
+    const isExist = await this.roleAccessRepository.findOne({
+      where: {
+        name: createRoleAccessDto.name,
+        resource: createRoleAccessDto.resource,
+      },
+    });
+
+    if (isExist) {
+      throw new ConflictException('Role access already exists');
+    }
+
+    const roleAccess =
+      await this.roleAccessRepository.create(createRoleAccessDto);
+    return await this.roleAccessRepository.save(roleAccess);
+  }
 
   findAll() {
-    return `This action returns all roleAccess`;
+    return this.roleAccessRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} roleAccess`;
+  async findOne(id: number) {
+    const roleAccess = await this.roleAccessRepository.findOne({
+      where: {
+        accessId: id,
+      },
+    });
+
+    if (!roleAccess) {
+      throw new NotFoundException('Role access not found');
+    }
+
+    return roleAccess;
   }
 
-  update(id: number, updateRoleAccessDto: UpdateRoleAccessDto) {
-    return `This action updates a #${id} roleAccess`;
+  async update(id: number, updateRoleAccessDto: UpdateRoleAccessDto) {
+    const ifExist = await this.roleAccessRepository.findOne({
+      where: {
+        name: updateRoleAccessDto.name,
+        resource: updateRoleAccessDto.resource,
+      },
+    });
+
+    if (!ifExist) {
+      throw new NotFoundException('Role access not found');
+    }
+
+    if (ifExist && ifExist.accessId !== id) {
+      throw new ConflictException('Role access already exists');
+    }
+
+    return this.roleAccessRepository.update(
+      { accessId: id },
+      updateRoleAccessDto,
+    );
   }
 
   remove(id: number) {
-    return `This action removes a #${id} roleAccess`;
+    return this.roleAccessRepository.delete({ accessId: id });
   }
 }
