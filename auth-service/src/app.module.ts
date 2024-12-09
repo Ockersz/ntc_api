@@ -4,12 +4,12 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
+import { RoleAccess } from './role-access/entities/role-access.entity';
+import { RoleAccessModule } from './role-access/role-access.module';
 import { Role } from './roles/entities/role.entity';
-import { RoleAccess } from './roles/entities/roles-access.entity';
 import { UserRole } from './roles/entities/user-role.entity';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
-import { RoleAccessModule } from './role-access/role-access.module';
 
 @Module({
   imports: [
