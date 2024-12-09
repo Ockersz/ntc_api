@@ -1,11 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// CREATE TABLE Role (
-//     roleId INT AUTO_INCREMENT PRIMARY KEY,
-//     name VARCHAR(50) NOT NULL,
-//     status TINYINT(1) NOT NULL CHECK (status IN (0, 1))
-// );
-
 @Entity('Role')
 export class Role {
   @PrimaryGeneratedColumn()
@@ -24,10 +18,12 @@ export class Role {
     type: 'text',
     name: 'access',
     transformer: {
-      to: (value: string[]) => value.join(','), // Serialize to comma-separated string
-      from: (value: string) => value.split(','), // Deserialize to array
+      to: (value: number[] | null | undefined) =>
+        Array.isArray(value) ? value.join(',') : null, // Serialize to a comma-separated string
+      from: (value: string | null | undefined) =>
+        value ? value.split(',').map(Number) : [], // Deserialize to an array
     },
-    default: '',
+    default: null, // This can remain as null for the database
   })
-  access: string[];
+  access: number[];
 }
