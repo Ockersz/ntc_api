@@ -1,3 +1,5 @@
+import { Role } from 'src/roles/entities/role.entity';
+
 export class ShowUserDto {
   userId: number;
   firstName: string;
@@ -5,4 +7,5 @@ export class ShowUserDto {
   email: string;
   username: string;
   status: number;
+  roles: Role[];
 }
