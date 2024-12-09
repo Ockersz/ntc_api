@@ -89,6 +89,13 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
+    const roleAccess = await this.userRoleRepository.find({
+      where: { userId: user.userId },
+      relations: ['role'],
+    });
+
+    console.log(roleAccess);
+
     const refreshToken = await this.jwtService.signAsync(
       { sub: user.userId, username: user.username },
       { expiresIn: '7d', secret: process.env.JWT_REFRESH_SECRET },
