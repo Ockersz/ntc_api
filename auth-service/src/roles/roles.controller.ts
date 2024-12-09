@@ -7,9 +7,8 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiResponse } from '@nestjs/swagger';
 import { DataSanitizer } from 'src/common/dataSanitizer';
-import { AssignRoleDto } from './dto/assign-role.dto';
-import { CreateRoleAccessDto } from './dto/create-role-access.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RolesService } from './roles.service';
@@ -18,24 +17,30 @@ import { RolesService } from './roles.service';
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
+  @ApiResponse({
+    status: 201,
+    description: 'The role has been successfully created.',
+  })
+  @ApiResponse({ status: 409, description: 'Role already exists.' })
   @Post()
   create(@Body() createRoleDto: CreateRoleDto) {
     const sanitizedRoleDto = DataSanitizer.sanitize(createRoleDto);
     return this.rolesService.create(sanitizedRoleDto);
   }
 
-  @Post('/assign')
-  async assignRoleAccess(@Body() assignRoleDto: AssignRoleDto) {
-    const sanitizedRoleDto = DataSanitizer.sanitize(assignRoleDto);
-    return await this.rolesService.assignRoleAccess(sanitizedRoleDto);
-  }
-
+  @ApiResponse({
+    status: 200,
+    description: 'Role access assigned successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Role not found.' })
+  @ApiResponse({ status: 409, description: 'Role access already assigned.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
   @Post(':roleId/access')
   async createRoleAccess(
     @Param('roleId') roleId: string,
-    @Body() assignRoleDto: CreateRoleAccessDto,
+    @Body() roleAccessIds: number[],
   ) {
-    const sanitizedRoleDto = DataSanitizer.sanitize(assignRoleDto);
+    const sanitizedRoleDto = DataSanitizer.sanitize(roleAccessIds);
     return await this.rolesService.createRoleAccess(+roleId, sanitizedRoleDto);
   }
 

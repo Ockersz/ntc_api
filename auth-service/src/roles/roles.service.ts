@@ -1,18 +1,14 @@
 import {
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { RoleAccess } from 'src/role-access/entities/role-access.entity';
 import { Repository } from 'typeorm';
-import { AssignRoleDto } from './dto/assign-role.dto';
-import { CreateRoleAccessDto } from './dto/create-role-access.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role } from './entities/role.entity';
-import { RoleAccess } from './entities/roles-access.entity';
-import { UserRole } from './entities/user-role.entity';
 
 @Injectable()
 export class RolesService {
@@ -21,72 +17,43 @@ export class RolesService {
     private roleRepository: Repository<Role>,
     @InjectRepository(RoleAccess)
     private roleAccessRepository: Repository<RoleAccess>,
-    @InjectRepository(UserRole)
-    private userRoleRepository: Repository<UserRole>,
   ) {}
 
-  create(createRoleDto: CreateRoleDto) {
+  async create(createRoleDto: CreateRoleDto) {
+    const ifRoleExists = await this.roleRepository.findOne({
+      where: { name: createRoleDto.name },
+    });
+
+    if (ifRoleExists) {
+      throw new ConflictException('Role already exists');
+    }
+
     return this.roleRepository.save(createRoleDto);
   }
 
-  async assignRoleAccess(assignRoleDto: AssignRoleDto) {
-    //check if role exists
-    const role = await this.roleRepository.findOne({
-      where: { roleId: assignRoleDto.roleId },
-    });
-
-    if (!role) {
-      throw new NotFoundException('Role not found');
-    }
-
-    //check if role access exists
-    const roleAccess = await this.userRoleRepository.findOne({
-      where: { roleId: assignRoleDto.roleId, userId: assignRoleDto.userId },
-    });
-
-    if (roleAccess) {
-      //already assigned
-      throw new ConflictException('Role already assigned');
-    }
-
-    try {
-      return this.userRoleRepository.save(assignRoleDto);
-    } catch (error) {
-      Logger.error(error);
-      throw new ConflictException('Role already assigned');
-    }
-  }
-
-  async createRoleAccess(
-    roleId: number,
-    createRoleAccessDto: CreateRoleAccessDto,
-  ) {
+  async createRoleAccess(roleId: number, roleAccessIds: number[]) {
     const role = await this.roleRepository.findOne({ where: { roleId } });
 
     if (!role) {
       throw new NotFoundException('Role not found');
     }
-
-    const existingRoleAccess = await this.roleAccessRepository.findOne({
-      where: { resource: createRoleAccessDto.resource },
-    });
-
-    if (existingRoleAccess) {
-      // Merge new access types with existing ones
-      const updatedAccessTypes = Array.from(
-        new Set([
-          ...existingRoleAccess.accessType,
-          ...createRoleAccessDto.accessType,
-        ]),
+    role.access = role.access || [];
+    const duplicateAccessIds = roleAccessIds.filter((id) =>
+      role.access.includes(id),
+    );
+    if (duplicateAccessIds.length > 0) {
+      throw new ConflictException(
+        `Role access already assigned: ${duplicateAccessIds.join(', ')}`,
       );
-      existingRoleAccess.accessType = updatedAccessTypes;
-
-      return await this.roleAccessRepository.save(existingRoleAccess);
     }
 
-    // Create a new role access entry
-    const newRoleAccess = this.roleAccessRepository.create(createRoleAccessDto);
-    return await this.roleAccessRepository.save(newRoleAccess);
+    role.access = [...new Set([...role.access, ...roleAccessIds])];
+
+    try {
+      return await this.roleRepository.save(role);
+    } catch (error) {
+      throw error;
+    }
   }
 
   findAll() {

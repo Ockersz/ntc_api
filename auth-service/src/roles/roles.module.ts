@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { RoleAccess } from 'src/role-access/entities/role-access.entity';
 import { Role } from './entities/role.entity';
-import { RoleAccess } from './entities/roles-access.entity';
-import { UserRole } from './entities/user-role.entity';
 import { RolesController } from './roles.controller';
 import { RolesService } from './roles.service';
 
@@ -12,7 +11,7 @@ import { RolesService } from './roles.service';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([Role, RoleAccess, UserRole]),
+    TypeOrmModule.forFeature([Role, RoleAccess]),
   ],
   controllers: [RolesController],
   providers: [RolesService],
