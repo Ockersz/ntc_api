@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
-import { ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CreateUserNtcDto } from 'src/auth/dto/create-ntc-user.dto';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { ShowUserDto } from './dto/show-user.dto';
@@ -46,6 +46,22 @@ export class UsersController {
   @Get(':id/roles')
   async findRoles(@Param('id') id: string) {
     return await this.usersService.findRoles(+id);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'The role has been successfully assigned.',
+  })
+  @ApiResponse({ status: 404, description: 'User or Role not found.' })
+  @ApiResponse({ status: 409, description: 'Role already assigned.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  @ApiParam({ name: 'id', type: 'number', required: true })
+  @ApiBody({
+    type: [Number],
+  })
+  @Post(':id/roles')
+  async assignRole(@Param('id') id: string, @Body() roles: number[]) {
+    return await this.usersService.assignRole(+id, roles);
   }
 
   @ApiResponse({

@@ -10,7 +10,7 @@ import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { User } from 'src/auth/entities/user.entity';
 import { Common } from 'src/common/common';
 import { UserRole } from 'src/roles/entities/user-role.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { ShowUserDto } from './dto/show-user.dto';
 
 @Injectable()
@@ -121,6 +121,37 @@ export class UsersService {
     }
 
     return roles;
+  }
+
+  async assignRole(id: number, roles: number[]) {
+    const user = await this.usersRepository.findOne({
+      where: { userId: id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const userRoles = await this.userRoleRepository.find({
+      where: { userId: id, roleId: In(roles) },
+    });
+
+    if (userRoles.length > 0) {
+      throw new ConflictException('Role already assigned');
+    }
+
+    try {
+      const userRoles = roles.map((roleId) => {
+        return this.userRoleRepository.create({
+          role: { roleId },
+          userId: id,
+        });
+      });
+
+      return await this.userRoleRepository.save(userRoles);
+    } catch (error) {
+      throw error;
+    }
   }
 
   update(id: number, updateUserDto: CreateUserDto) {
