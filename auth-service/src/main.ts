@@ -9,7 +9,6 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Auth Service')
     .setVersion('1.0')
-    .addTag('auth')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
