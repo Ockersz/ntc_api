@@ -18,4 +18,7 @@ router.delete(
   RouteController.removeCityFromRoute
 );
 
+// Nested route for buses
+router.get("/:routeId/buses", RouteController.getRouteBuses);
+
 module.exports = router;

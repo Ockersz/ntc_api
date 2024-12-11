@@ -13,6 +13,10 @@ class BusService {
     return await Bus.findByPk(busId);
   }
 
+  static async getBusByVehicleRegNo(vehicleRegNo) {
+    return await Bus.findOne({ where: { vehicleRegNo } });
+  }
+
   static async updateBus(busId, updateData) {
     const bus = await Bus.findByPk(busId);
     if (!bus) throw new Error("Bus not found");

@@ -95,6 +95,15 @@ class RouteController {
       res.status(400).json({ message: error.message });
     }
   }
+
+  static async getRouteBuses(req, res) {
+    try {
+      const buses = await RouteService.getRouteBuses(req.params.routeId);
+      res.status(200).json(buses);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = RouteController;

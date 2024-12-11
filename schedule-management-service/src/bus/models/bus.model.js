@@ -11,7 +11,7 @@ const Bus = sequelize.define(
     },
     operatorId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     permitId: {
       type: DataTypes.STRING,
@@ -34,6 +34,15 @@ const Bus = sequelize.define(
     seatCount: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    routeId: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // NULL for unassigned buses
+      references: {
+        model: "route",
+        key: "routeId",
+      },
+      onDelete: "SET NULL", // If a route is deleted, set this to NULL
     },
   },
   {

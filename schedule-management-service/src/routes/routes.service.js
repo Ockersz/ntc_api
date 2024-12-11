@@ -1,4 +1,5 @@
 const Route = require("./models/routes.model");
+const Bus = require("../bus/models/bus.model");
 
 class RouteService {
   static async createRoute(routeData) {
@@ -24,6 +25,14 @@ class RouteService {
     if (!route) throw new Error("Route not found");
     await route.destroy();
     return true;
+  }
+
+  static async getRouteBuses(routeId) {
+    const buses = await Bus.findAll({
+      where: { routeId: routeId },
+    });
+    if (!buses || buses.length === 0) throw new Error("Buses not found");
+    return buses;
   }
 }
 

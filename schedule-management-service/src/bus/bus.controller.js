@@ -29,6 +29,18 @@ class BusController {
     }
   }
 
+  static async getBusByVehicleRegNo(req, res) {
+    try {
+      const bus = await BusService.getBusByVehicleRegNo(
+        req.params.vehicleRegNo
+      );
+      if (!bus) return res.status(404).json({ message: "Bus not found" });
+      res.status(200).json(bus);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
   static async updateBus(req, res) {
     try {
       const updatedBus = await BusService.updateBus(req.params.busId, req.body);
