@@ -104,6 +104,17 @@ class RouteController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async getRouteScheduleTemplates(req, res) {
+    try {
+      const scheduleTemplates = await RouteService.getRouteScheduleTemplates(
+        req.params.routeId
+      );
+      res.status(200).json(scheduleTemplates);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = RouteController;

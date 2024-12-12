@@ -1,5 +1,6 @@
-const Route = require("./models/routes.model");
+const { Route } = require("./models/relations");
 const Bus = require("../bus/models/bus.model");
+const ScheduleTemplate = require("../schedule-template/models/schedule-template.model");
 
 class RouteService {
   static async createRoute(routeData) {
@@ -33,6 +34,14 @@ class RouteService {
     });
     if (!buses || buses.length === 0) throw new Error("Buses not found");
     return buses;
+  }
+
+  static async getRouteScheduleTemplates(routeId) {
+    const route = await Route.findByPk(routeId, {
+      include: [ScheduleTemplate],
+    });
+    if (!route) throw new Error("Route not found");
+    return route;
   }
 }
 

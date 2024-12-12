@@ -20,5 +20,8 @@ router.delete(
 
 // Nested route for buses
 router.get("/:routeId/buses", RouteController.getRouteBuses);
-
+router.get(
+  "/:routeId/schedule-templates",
+  RouteController.getRouteScheduleTemplates
+);
 module.exports = router;
