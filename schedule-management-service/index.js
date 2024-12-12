@@ -4,6 +4,7 @@ const sequelize = require("./src/config/database");
 const cityRoutes = require("./src/city/city.routes");
 const routeRoutes = require("./src/routes/routes.routes");
 const scheduleTemplateRoutes = require("./src/schedule-template/schedule-template.routes");
+const scheduleRoutes = require("./src/schedules/schedule.routes");
 const authMiddleware = require("./middleware/auth");
 
 const app = express();
@@ -15,6 +16,7 @@ app.use("/buses", busRoutes);
 app.use("/cities", cityRoutes);
 app.use("/routes", routeRoutes);
 app.use("/schedule-template", scheduleTemplateRoutes);
+app.use("/schedules", scheduleRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
