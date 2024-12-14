@@ -23,6 +23,21 @@ class ScheduleController {
     }
   }
 
+  async getSeatAvailability(req, res) {
+    try {
+      const { id } = req.params;
+      const availability = await ScheduleService.getSeatAvailability(id);
+      if (!availability) {
+        return res.status(404).json({ message: "Schedule not found" });
+      }
+      res.status(200).json(availability);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error fetching seat availability", error });
+    }
+  }
+
   async createSchedules(req, res) {
     try {
       const { routeId, dateRange, templateIds } = req.body;
