@@ -1,6 +1,8 @@
 const { Route } = require("./models/relations");
 const Bus = require("../bus/models/bus.model");
 const ScheduleTemplate = require("../schedule-template/models/schedule-template.model");
+const Schedule = require("../schedules/models/schedule.model");
+const { Op } = require("sequelize");
 
 class RouteService {
   static async createRoute(routeData) {
@@ -42,6 +44,29 @@ class RouteService {
     });
     if (!route) throw new Error("Route not found");
     return route;
+  }
+
+  static async getRouteSchedules(routeId, fromDate, toDate) {
+    if (fromDate && toDate) {
+      return await Route.findByPk(routeId, {
+        include: [
+          {
+            model: Schedule,
+            where: {
+              startTime: {
+                [Op.between]: [fromDate, toDate],
+              },
+            },
+          },
+        ],
+      });
+    } else {
+      const route = await Route.findByPk(routeId, {
+        include: [Schedule],
+      });
+      if (!route) throw new Error("Route not found");
+      return route;
+    }
   }
 }
 
