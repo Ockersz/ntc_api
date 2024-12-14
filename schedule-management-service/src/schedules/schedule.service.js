@@ -1,4 +1,4 @@
-const Schedule = require("./models/schedule.model");
+const { Schedule, Bus, Route } = require("./models/relations");
 const {
   ScheduleTemplate,
   ScheduleTemplateDetail,
@@ -12,7 +12,9 @@ class ScheduleService {
   }
 
   async getScheduleById(scheduleId) {
-    return await Schedule.findByPk(scheduleId);
+    return await Schedule.findByPk(scheduleId, {
+      include: [Bus, Route],
+    });
   }
 
   async processSchedule(routeId, dateRange, templateIds) {
@@ -44,7 +46,6 @@ class ScheduleService {
     const returnTemplates = templates.filter(
       (template) => template.direction === "return"
     );
-    console.log(outboundTemplates);
     // Validation: Check for conflicting templates in each direction
     this.validateTemplateConflicts(outboundTemplates, startDate, endDate);
     this.validateTemplateConflicts(returnTemplates, startDate, endDate);
