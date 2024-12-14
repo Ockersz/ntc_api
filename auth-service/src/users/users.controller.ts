@@ -1,10 +1,20 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBody, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { AuthGuard } from 'src/auth.guard';
 import { CreateUserNtcDto } from 'src/auth/dto/create-ntc-user.dto';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { ShowUserDto } from './dto/show-user.dto';
 import { UsersService } from './users.service';
 
+@UseGuards(AuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
