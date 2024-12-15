@@ -1,26 +1,35 @@
 const express = require("express");
-const sequelize = require("./src/config/database");
-const authMiddleware = require("./middleware/auth");
-// const bookingRoutes = require("./src/bookings/bookings.routes");
-const reservationRoutes = require("./src/reservations/reservation.routes");
+const { sendEmail, verifyEmailAddresses } = require("./utils");
 
 const app = express();
-const port = 3002;
+const port = 3003;
 
 app.use(express.json());
-app.use(authMiddleware);
-// app.use("/bookings", bookingRoutes);
-app.use("/reservations", reservationRoutes);
+
+app.post("/verify-emails", async (req, res) => {
+  try {
+    const { emails } = req.body;
+    const verificationResults = await verifyEmailAddresses(emails);
+
+    res.status(200).json({ verificationResults });
+  } catch (error) {
+    console.log("Error verifying email addresses: ", error);
+    res.status(500).json({ error: "Error verifying email addresses" });
+  }
+});
+
+app.post("/send-email", async (req, res) => {
+  try {
+    const { emails, subject, message } = req.body;
+    const emailResults = await sendEmail(emails, subject, message);
+
+    res.status(200).json({ emailResults });
+  } catch (error) {
+    console.log("Error sending email: ", error);
+    res.status(500).json({ error: "Error sending email" });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-  //connect to database
-  sequelize
-    .authenticate()
-    .then(() => {
-      console.log("Connection has been established successfully.");
-    })
-    .catch((err) => {
-      console.error("Unable to connect to the database:", err);
-    });
 });
