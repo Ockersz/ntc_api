@@ -1,18 +1,31 @@
-const Schedule = require("./models/schedule.model");
+const { Schedule, Bus, Route } = require("./models/relations");
+const axios = require("axios");
 const {
   ScheduleTemplate,
   ScheduleTemplateDetail,
 } = require("../schedule-template/models/relations");
 const moment = require("moment");
 const sequelize = require("../config/database");
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 class ScheduleService {
+  generateServiceToken() {
+    return jwt.sign(
+      { service: process.env.TRUSTED_SERVICE_NAME },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+  }
+
   async getAllSchedules() {
     return await Schedule.findAll();
   }
 
   async getScheduleById(scheduleId) {
-    return await Schedule.findByPk(scheduleId);
+    return await Schedule.findByPk(scheduleId, {
+      include: [Bus, Route],
+    });
   }
 
   async processSchedule(routeId, dateRange, templateIds) {
@@ -44,7 +57,6 @@ class ScheduleService {
     const returnTemplates = templates.filter(
       (template) => template.direction === "return"
     );
-    console.log(outboundTemplates);
     // Validation: Check for conflicting templates in each direction
     this.validateTemplateConflicts(outboundTemplates, startDate, endDate);
     this.validateTemplateConflicts(returnTemplates, startDate, endDate);
@@ -179,6 +191,35 @@ class ScheduleService {
     }
 
     return dates;
+  }
+
+  async getSeatAvailability(scheduleId) {
+    try {
+      const token = this.generateServiceToken();
+      const response = await axios.get(
+        `${process.env.BOOKING_SERVICE_URL}/reservations/booked-seats?scheduleId=${scheduleId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const schedule = await this.getScheduleById(scheduleId);
+
+      if (!schedule) {
+        throw new Error("Schedule not found.");
+      }
+
+      const busSeats = schedule.Bus.seatCount;
+
+      if (response.status === 200) {
+        return busSeats - response.data.availableSeats;
+      }
+    } catch (error) {
+      console.error("Error fetching schedule details:", error.message);
+      throw new Error("Failed to fetch schedule details");
+    }
   }
 }
 

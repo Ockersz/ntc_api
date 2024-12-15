@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const authMiddleware = (req, res, next) => {
-  return next();
+  return next(); // Disable authentication for now
   const authorizationHeader = req.headers["authorization"];
 
   if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {

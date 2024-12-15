@@ -24,4 +24,6 @@ router.get(
   "/:routeId/schedule-templates",
   RouteController.getRouteScheduleTemplates
 );
+router.get("/:routeId/schedules", RouteController.getRouteSchedules);
+
 module.exports = router;

@@ -2,9 +2,11 @@ import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBody, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CreateUserNtcDto } from 'src/auth/dto/create-ntc-user.dto';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
+import { DataSanitizer } from 'src/common/dataSanitizer';
 import { ShowUserDto } from './dto/show-user.dto';
 import { UsersService } from './users.service';
 
+// @UseGuards(AuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -21,7 +23,9 @@ export class UsersController {
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   @Post()
   create(@Body() createUserDto: CreateUserNtcDto) {
-    return this.usersService.create(createUserDto);
+    const sanitizedUser: CreateUserNtcDto =
+      DataSanitizer.sanitize(createUserDto);
+    return this.usersService.create(sanitizedUser);
   }
 
   @ApiResponse({
@@ -61,7 +65,8 @@ export class UsersController {
   })
   @Post(':id/roles')
   async assignRole(@Param('id') id: string, @Body() roles: number[]) {
-    return await this.usersService.assignRole(+id, roles);
+    const sanitizedRoles: number[] = DataSanitizer.sanitize(roles);
+    return await this.usersService.assignRole(+id, sanitizedRoles);
   }
 
   @ApiResponse({
@@ -76,6 +81,7 @@ export class UsersController {
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: CreateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    const sanitizedUser: CreateUserDto = DataSanitizer.sanitize(updateUserDto);
+    return this.usersService.update(+id, sanitizedUser);
   }
 }

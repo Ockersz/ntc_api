@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEmail, IsString } from 'class-validator';
-import { IsPassword, IsUsername } from 'src/common/dataValidator';
+import { IsUsername } from 'src/common/dataValidator';
 
 export class CreateUserNtcDto {
   @ApiProperty({
@@ -43,14 +43,6 @@ export class CreateUserNtcDto {
     message: 'Username must be all lowercase and at least 7 characters long',
   })
   username: string;
-
-  @ApiProperty({
-    example: 'password',
-    description: 'Password of the user',
-    required: true,
-  })
-  @IsPassword()
-  password: string;
 
   @ApiProperty({
     example: [1, 2],
