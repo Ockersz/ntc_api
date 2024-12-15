@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const authMiddleware = (req, res, next) => {
-  return next();
+  return next(); // Disable authentication for now
   const authorizationHeader = req.headers["authorization"];
 
   if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
@@ -17,9 +17,18 @@ const authMiddleware = (req, res, next) => {
     // Verify the JWT token
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach user info to the request for later use
+    // Check if the request comes from a trusted service
+    if (
+      payload.service &&
+      payload.service === process.env.TRUSTED_SERVICE_NAME
+    ) {
+      // Inter-service communication detected, bypass permissions check
+      return next();
+    }
+
+    // For user tokens, continue with normal permission checks
     req.user = payload;
-    // Extract resource and access type from the request
+
     const resource = getResourceFromPath(req.path);
     const accessType = getAccessType(req.method);
 
@@ -29,7 +38,6 @@ const authMiddleware = (req, res, next) => {
         .json({ message: "Invalid resource or access type" });
     }
 
-    // Check user permissions
     const userPermissions = payload.permissions || {};
     if (!hasPermissions(userPermissions[resource], accessType)) {
       return res.status(403).json({
@@ -37,7 +45,7 @@ const authMiddleware = (req, res, next) => {
       });
     }
 
-    // If all checks pass, proceed to the next middleware or route handler
+    // If all checks pass, proceed
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {
@@ -47,7 +55,6 @@ const authMiddleware = (req, res, next) => {
       return res.status(401).json({ message: "Token expired" });
     }
 
-    // Handle unexpected errors
     return res.status(500).json({
       message: "An error occurred while verifying the token",
       error: error.message,

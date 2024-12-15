@@ -42,7 +42,7 @@ const Bookings = sequelize.define(
     status: {
       type: DataTypes.CHAR,
       allowNull: false,
-      defaultValue: "P",
+      defaultValue: "B",
     },
     prefferedNotificationType: {
       type: DataTypes.ENUM,
