@@ -115,6 +115,22 @@ class RouteController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  static async getRouteSchedules(req, res) {
+    try {
+      const fromDate = req.query.fromDate;
+      const toDate = req.query.toDate;
+
+      const schedules = await RouteService.getRouteSchedules(
+        req.params.routeId,
+        fromDate,
+        toDate
+      );
+      res.status(200).json(schedules);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }
 
 module.exports = RouteController;

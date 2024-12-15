@@ -1,6 +1,7 @@
 const RouteCity = require("./route_city.model");
 const Route = require("./routes.model");
 const ScheduleTemplate = require("../../schedule-template/models/schedule-template.model");
+const Schedule = require("../../schedules/models/schedule.model");
 
 Route.hasMany(RouteCity, {
   foreignKey: "routeId",
@@ -17,6 +18,15 @@ Route.hasMany(ScheduleTemplate, {
 });
 
 ScheduleTemplate.belongsTo(Route, {
+  foreignKey: "routeId",
+});
+
+Route.hasMany(Schedule, {
+  foreignKey: "routeId",
+  onDelete: "CASCADE",
+});
+
+Schedule.belongsTo(Route, {
   foreignKey: "routeId",
 });
 
