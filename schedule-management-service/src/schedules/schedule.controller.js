@@ -65,6 +65,18 @@ class ScheduleController {
       res.status(500).json({ message: "Error deleting schedule", error });
     }
   }
+
+  async getSeatsAvailable(req, res) {
+    try {
+      const { id } = req.params;
+      const availableSeats = await ScheduleService.getSeatAvailability(id);
+      res.status(200).json({ availableSeats });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error fetching available seats", error });
+    }
+  }
 }
 
 module.exports = new ScheduleController();
