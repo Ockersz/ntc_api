@@ -78,6 +78,14 @@ export class UsersService {
       }
 
       const emailBody = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to NTC!</title>
+      </head>
+      <body>
        <div style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f9f9f9; padding: 20px; color: #333;">
           <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <div style="padding: 20px; text-align: center; background-color: #4CAF50; border-radius: 8px 8px 0 0; color: #ffffff;">
@@ -109,6 +117,8 @@ export class UsersService {
             </div>
           </div>
         </div>
+      </body>
+      </html>
       `;
 
       const configService = new ConfigService();
