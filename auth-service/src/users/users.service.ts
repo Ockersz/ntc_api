@@ -46,17 +46,19 @@ export class UsersService {
         throw new ConflictException('Email already exists');
       }
 
+      const password = this.generateRandomPassword();
+
       const createdUser = await this.usersRepository.save(
         this.usersRepository.create({
           ...createUserDto,
-          password: await Common.hashPassword(createUserDto.password),
+          password: await Common.hashPassword(password),
         }),
       );
 
-      if (createUserDto.roles) {
-        const roles = await this.userRoleRepository.findByIds(
-          createUserDto.roles,
-        );
+      if (createUserDto.roles && createUserDto.roles.length > 0) {
+        const roles = await this.userRoleRepository.findBy({
+          roleId: In(createUserDto.roles),
+        });
 
         if (roles.length !== createUserDto.roles.length) {
           throw new NotFoundException('Role not found');
@@ -81,6 +83,17 @@ export class UsersService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  generateRandomPassword() {
+    const length = 8;
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let retVal = '';
+    for (let i = 0, n = charset.length; i < length; ++i) {
+      retVal += charset.charAt(Math.floor(Math.random() * n));
+    }
+    return retVal;
   }
 
   async findOne(id: number): Promise<ShowUserDto> {
