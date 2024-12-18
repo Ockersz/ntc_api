@@ -34,117 +34,137 @@ export class UsersService {
     await queryRunner.startTransaction();
 
     try {
-      const user = await this.usersRepository.findOne({
-        where: { username: createUserDto.username },
+      // Check for duplicate username or email
+      const existingUser = await this.usersRepository.findOne({
+        where: [
+          { username: createUserDto.username },
+          { email: createUserDto.email },
+        ],
       });
 
-      if (user) {
-        throw new ConflictException('Username already exists');
+      if (existingUser) {
+        const conflictField =
+          existingUser.username === createUserDto.username
+            ? 'Username'
+            : 'Email';
+        throw new ConflictException(`${conflictField} already exists`);
       }
 
-      const email = await this.usersRepository.findOne({
-        where: { email: createUserDto.email },
-      });
-
-      if (email) {
-        throw new ConflictException('Email already exists');
-      }
-
+      // Generate random password
       const password = this.generateRandomPassword();
 
-      const createdUser = await this.usersRepository.save(
-        this.usersRepository.create({
-          ...createUserDto,
-          password: await Common.hashPassword(password),
-        }),
-      );
+      // Create the user
+      const newUser = this.usersRepository.create({
+        ...createUserDto,
+        password: await Common.hashPassword(password),
+      });
 
+      const createdUser = await queryRunner.manager.save(newUser);
+
+      // Assign roles if provided
       if (createUserDto.roles && createUserDto.roles.length > 0) {
         const roles = await this.rolesRepository.find({
           where: { roleId: In(createUserDto.roles) },
         });
+
         if (roles.length !== createUserDto.roles.length) {
-          throw new NotFoundException('Role not found');
+          throw new NotFoundException('Some roles not found');
         }
 
-        const userRoles = roles.map((role) => {
-          return this.userRoleRepository.create({
+        const userRoles = roles.map((role) =>
+          this.userRoleRepository.create({
             role,
             userId: createdUser.userId,
-          });
-        });
+          }),
+        );
 
-        await this.userRoleRepository.save(userRoles);
+        await queryRunner.manager.save(userRoles);
       }
 
-      const emailBody = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to NTC!</title>
-      </head>
-      <body>
-       <div style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f9f9f9; padding: 20px; color: #333;">
-          <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-            <div style="padding: 20px; text-align: center; background-color: #4CAF50; border-radius: 8px 8px 0 0; color: #ffffff;">
-              <h1 style="margin: 0; font-size: 24px;">Welcome to NTC!</h1>
-            </div>
-            <div style="padding: 20px;">
-              <p style="font-size: 18px;">Hi <strong>${createUserDto.firstName}</strong>,</p>
-              <p style="font-size: 16px;">We’re thrilled to welcome you to the NTC family! Below, you’ll find your login details:</p>
-              <div style="background-color: #f1f1f1; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <ul style="list-style-type: none; padding: 0; font-size: 16px; margin: 0;">
-                  <li><strong>Username:</strong> ${createUserDto.username}</li>
-                  <li><strong>Password:</strong> ${password}</li>
-                </ul>
-              </div>
-              <p style="color: #d9534f; font-size: 16px;"><strong>Important:</strong> Please update your password after your first login for security purposes.</p>
-              <p style="font-size: 16px;">If you have any questions or need assistance, don’t hesitate to reach out to us.</p>
-              <p style="margin: 30px 0 0; font-size: 16px;">Welcome aboard!</p>
-              <p style="margin: 0; font-size: 16px;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; font-weight: bold;">The NTC Team</p>
-            </div>
-            <div style="padding: 20px; background-color: #f1f1f1; border-radius: 0 0 8px 8px; text-align: center; font-size: 14px; color: #777;">
-              <p style="margin: 0;">Follow us on:</p>
-              <div style="margin: 10px 0;">
-                <a href="#" style="margin: 0 5px; text-decoration: none; color: #4CAF50;">Facebook</a> |
-                <a href="#" style="margin: 0 5px; text-decoration: none; color: #4CAF50;">Twitter</a> |
-                <a href="#" style="margin: 0 5px; text-decoration: none; color: #4CAF50;">LinkedIn</a>
-              </div>
-              <p style="margin: 10px 0 0;">© 2024 NTC Corporation. All Rights Reserved.</p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-      `;
+      // Send welcome email
+      await this.sendWelcomeEmail(createUserDto, password);
 
-      const configService = new ConfigService();
-
-      configService.set('AWS_ACCESS_KEY_ID', process.env.AWS_ACCESS_KEY_ID);
-      configService.set(
-        'AWS_SECRET_ACCESS_KEY',
-        process.env.AWS_SECRET_ACCESS_KEY,
-      );
-      configService.set('AWS_REGION', process.env.AWS_REGION);
-
-      const emailQueueService = new EmailQueueService(configService);
-      emailQueueService.sendMessageToSQS({
-        subject: 'Welcome to NTC!',
-        body: emailBody,
-        recipient: createUserDto.email,
-      });
-      await queryRunner.rollbackTransaction();
+      // Commit the transaction
+      await queryRunner.commitTransaction();
 
       return createdUser;
     } catch (error) {
+      // Rollback the transaction in case of error
       await queryRunner.rollbackTransaction();
+      console.error('Error creating user:', error.message);
       throw error;
     } finally {
+      // Release the query runner
       await queryRunner.release();
     }
+  }
+
+  /**
+   * Sends a welcome email to the newly created user.
+   * @param createUserDto - DTO containing user details.
+   * @param password - Randomly generated password for the user.
+   */
+  private async sendWelcomeEmail(
+    createUserDto: CreateUserNtcDto,
+    password: string,
+  ): Promise<void> {
+    const emailBody = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to NTC!</title>
+    </head>
+    <body>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; background-color: #f9f9f9; padding: 20px; color: #333;">
+        <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+          <div style="padding: 20px; text-align: center; background-color: #4CAF50; border-radius: 8px 8px 0 0; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 24px;">Welcome to NTC!</h1>
+          </div>
+          <div style="padding: 20px;">
+            <p style="font-size: 18px;">Hi <strong>${createUserDto.firstName}</strong>,</p>
+            <p style="font-size: 16px;">We’re thrilled to welcome you to the NTC family! Below, you’ll find your login details:</p>
+            <div style="background-color: #f1f1f1; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <ul style="list-style-type: none; padding: 0; font-size: 16px; margin: 0;">
+                <li><strong>Username:</strong> ${createUserDto.username}</li>
+                <li><strong>Password:</strong> ${password}</li>
+              </ul>
+            </div>
+            <p style="color: #d9534f; font-size: 16px;"><strong>Important:</strong> Please update your password after your first login for security purposes.</p>
+            <p style="font-size: 16px;">If you have any questions or need assistance, don’t hesitate to reach out to us.</p>
+            <p style="margin: 30px 0 0; font-size: 16px;">Welcome aboard!</p>
+            <p style="margin: 0; font-size: 16px;">Best regards,</p>
+            <p style="margin: 0; font-size: 16px; font-weight: bold;">The NTC Team</p>
+          </div>
+          <div style="padding: 20px; background-color: #f1f1f1; border-radius: 0 0 8px 8px; text-align: center; font-size: 14px; color: #777;">
+            <p style="margin: 0;">Follow us on:</p>
+            <div style="margin: 10px 0;">
+              <a href="#" style="margin: 0 5px; text-decoration: none; color: #4CAF50;">Facebook</a> |
+              <a href="#" style="margin: 0 5px; text-decoration: none; color: #4CAF50;">Twitter</a> |
+              <a href="#" style="margin: 0 5px; text-decoration: none; color: #4CAF50;">LinkedIn</a>
+            </div>
+            <p style="margin: 10px 0 0;">© 2024 NTC Corporation. All Rights Reserved.</p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    const configService = new ConfigService();
+    configService.set('AWS_REGION', process.env.AWS_REGION);
+    configService.set('AWS_ACCESS_KEY_ID', process.env.AWS_ACCESS_KEY_ID);
+    configService.set(
+      'AWS_SECRET_ACCESS_KEY',
+      process.env.AWS_SECRET_ACCESS_KEY,
+    );
+    const emailQueueService = new EmailQueueService(configService);
+    await emailQueueService.sendMessageToSQS({
+      subject: 'Welcome to NTC!',
+      body: emailBody,
+      recipient: createUserDto.email,
+    });
   }
 
   generateRandomPassword() {

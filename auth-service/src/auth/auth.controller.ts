@@ -1,8 +1,19 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Put,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { AuthGuard } from 'src/auth.guard';
 import { DataSanitizer } from 'src/common/dataSanitizer';
 import { AuthService } from './auth.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -31,14 +42,29 @@ export class AuthController {
   async login(@Body() loginUserDto: LoginUserDto) {
     const sanitizedUser: LoginUserDto = DataSanitizer.sanitize(loginUserDto);
 
-    const { accessToken, refreshToken } =
+    const { accessToken, refreshToken, firstLogin } =
       await this.authService.login(sanitizedUser);
 
     return {
       message: 'Login successful',
       accessToken,
       refreshToken,
+      firstLogin,
     };
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Request() req: any,
+  ) {
+    const sanitizedChangePassword: ChangePasswordDto =
+      DataSanitizer.sanitize(changePasswordDto);
+    return this.authService.changePassword(
+      sanitizedChangePassword,
+      req.user.sub,
+    );
   }
 
   // Refresh access token
