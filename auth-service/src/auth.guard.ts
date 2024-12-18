@@ -33,6 +33,10 @@ export class AuthGuard implements CanActivate {
       // Attach user info to the request for later use
       request.user = payload;
 
+      if (request.route.path === '/auth/change-password') {
+        return true;
+      }
+
       const resource = this.getResourceFromPath(request.route.path);
       const accessType = this.getAccessType(request.method);
 
