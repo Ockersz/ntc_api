@@ -26,7 +26,12 @@ class BusService {
   static async deleteBus(busId) {
     const bus = await Bus.findByPk(busId);
     if (!bus) throw new Error("Bus not found");
-    await bus.destroy();
+    await bus.update(
+      {
+        status: "0",
+      },
+      { where: { busId } }
+    );
     return true;
   }
 }
