@@ -12,6 +12,7 @@ import { RoleAccess } from 'src/role-access/entities/role-access.entity';
 import { Role } from 'src/roles/entities/role.entity';
 import { UserRole } from 'src/roles/entities/user-role.entity';
 import { In, Repository } from 'typeorm';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -147,7 +148,37 @@ export class AuthService {
       secret: process.env.JWT_SECRET,
     });
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, firstLogin: user.isFirstLogin };
+  }
+
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: number) {
+    const user = await this.usersRepository.findOne({
+      where: { userId: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isValidPassword = await Common.validatePassword(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
+
+    if (!isValidPassword) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    const newPassword = await Common.hashPassword(
+      changePasswordDto.newPassword,
+    );
+
+    await this.usersRepository.update(
+      { userId: userId },
+      { password: newPassword, isFirstLogin: false },
+    );
+
+    return { message: 'Password changed successfully' };
   }
 
   async refreshToken(refreshTokenDto: RefreshTokenDto) {
