@@ -38,8 +38,6 @@ async function pollMessagesFromSQS() {
             })
             .promise();
         } else {
-          //send an email to shaheinockersz1234@gmail.com saying that the email was not sent
-          console.log("Email not sent");
           await sendEmail(
             "shaheinockersz1234@gmail.com",
             "Email not sent to " + email.recipient,
