@@ -1,5 +1,7 @@
 const AWS = require("aws-sdk");
 require("dotenv").config();
+
+// Configure AWS SES
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -8,31 +10,62 @@ AWS.config.update({
 
 const ses = new AWS.SES();
 
+/**
+ * Verify a list of email addresses.
+ * @param {string[]} emails - List of email addresses to verify.
+ * @returns {Promise<object>} Results of email verification.
+ */
 const verifyEmailAddresses = async (emails) => {
-  try {
-    const verificationPromises = emails.map(async (email) => {
-      const params = {
-        EmailAddress: email,
-      };
-
-      return await ses.verifyEmailIdentity(params).promise();
-    });
-  } catch (error) {
-    console.log("Error verifying email addresses: ", error);
-    return false;
+  if (!Array.isArray(emails) || emails.length === 0) {
+    console.error("Email list is invalid or empty.");
+    return { success: [], failed: ["No emails provided"] };
   }
+
+  const verificationResults = await Promise.allSettled(
+    emails.map(async (email) => {
+      const params = { EmailAddress: email };
+
+      try {
+        await ses.verifyEmailIdentity(params).promise();
+        console.log(`Verification initiated for: ${email}`);
+        return { email, status: "success" };
+      } catch (error) {
+        console.error(`Error verifying email: ${email}`, error.message);
+        return { email, status: "failed", error: error.message };
+      }
+    })
+  );
+
+  return parseResults(verificationResults);
 };
 
+/**
+ * Send an email to a list of recipients.
+ * @param {string|string[]} emails - List of recipient email addresses or a single email address.
+ * @param {string} subject - Email subject.
+ * @param {string} message - Email message body.
+ * @returns {Promise<object>} Results of email sending.
+ */
 const sendEmail = async (emails, subject, message) => {
-  try {
-    const emailPromises = emails.map(async (email) => {
+  if (!emails || (Array.isArray(emails) && emails.length === 0)) {
+    console.error("Email list is invalid or empty.");
+    return { success: [], failed: ["No emails provided"] };
+  }
+
+  // Ensure emails is an array
+  if (!Array.isArray(emails)) {
+    emails = [emails];
+  }
+
+  const emailResults = await Promise.allSettled(
+    emails.map(async (email) => {
       const params = {
         Destination: {
           ToAddresses: [email],
         },
         Message: {
           Body: {
-            Text: {
+            Html: {
               Charset: "UTF-8",
               Data: message,
             },
@@ -42,15 +75,44 @@ const sendEmail = async (emails, subject, message) => {
             Data: subject,
           },
         },
-        Source: "shaheinockersz1234@gmail.com",
+        Source: process.env.SES_SOURCE_EMAIL || "shaheinockersz1234@gmail.com", // Use environment variable for the source email
       };
 
-      return await ses.sendEmail(params).promise();
-    });
-  } catch (error) {
-    console.log("Error sending email: ", error);
-    return false;
-  }
+      try {
+        await ses.sendEmail(params).promise();
+        console.log(`Email sent successfully to: ${email}`);
+        return { email, status: "success" };
+      } catch (error) {
+        console.error(`Error sending email to: ${email}`, error.message);
+        return { email, status: "failed", error: error.message };
+      }
+    })
+  );
+
+  return parseResults(emailResults);
+};
+
+/**
+ * Helper function to parse results from Promise.allSettled.
+ * @param {Array} results - Array of Promise.allSettled results.
+ * @returns {object} Parsed success and failure results.
+ */
+const parseResults = (results) => {
+  const success = [];
+  const failed = [];
+
+  results.forEach((result) => {
+    if (result.status === "fulfilled") {
+      success.push(result.value);
+    } else {
+      failed.push({
+        error: result.reason?.message || "Unknown error",
+        ...result.reason,
+      });
+    }
+  });
+
+  return { success, failed };
 };
 
 module.exports = {
