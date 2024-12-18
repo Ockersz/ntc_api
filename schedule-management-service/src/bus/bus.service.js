@@ -1,4 +1,4 @@
-const Bus = require("./models/bus.model");
+const { Bus, BusType } = require("./models/relations");
 
 class BusService {
   static async createBus(busData) {
@@ -6,7 +6,13 @@ class BusService {
   }
 
   static async getAllBuses() {
-    return await Bus.findAll();
+    return await Bus.findAll({
+      include: [
+        {
+          model: BusType,
+        },
+      ],
+    });
   }
 
   static async getBusById(busId) {
