@@ -1,6 +1,31 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database"); // Your DB connection
 
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *    RouteCity:
+ *      type: object
+ *      required:
+ *        - routeId
+ *        - cityId
+ *        - sequenceOrder
+ *      properties:
+ *        routeCityId:
+ *          type: integer
+ *          description: The unique identifier for a route city
+ *        routeId:
+ *          type: integer
+ *          description: The route identifier for the route city
+ *        cityId:
+ *          type: integer
+ *          description: The city identifier for the route city
+ *        sequenceOrder:
+ *          type: integer
+ *          description: The sequence order of the route city
+ */
+
 const RouteCity = sequelize.define(
   "RouteCity",
   {

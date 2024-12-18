@@ -1,6 +1,33 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database"); // Replace with your DB connection
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Route:
+ *      type: object
+ *      required:
+ *        - routeName
+ *        - estimatedTime
+ *        - distance
+ *        - cityId
+ *        - name
+ *      properties:
+ *         routeId:
+ *          type: integer
+ *          description: The unique identifier for a route
+ *         routeName:
+ *          type: string
+ *          description: The name of the route
+ *         estimatedTime:
+ *          type: string
+ *          description: The estimated time for the route
+ *         distance:
+ *          type: number
+ *          description: The distance of the route
+ */
+
 const Route = sequelize.define(
   "Route",
   {

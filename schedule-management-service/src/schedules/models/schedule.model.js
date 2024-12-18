@@ -1,6 +1,51 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
 
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *    Schedule:
+ *      type: object
+ *      required:
+ *        - routeId
+ *        - busId
+ *        - templateId
+ *        - startTime
+ *        - endTime
+ *        - status
+ *        - createdAt
+ *        - updatedAt
+ *      properties:
+ *        scheduleId:
+ *          type: integer
+ *          description: The unique identifier for a schedule
+ *        routeId:
+ *          type: integer
+ *          description: The route identifier for the schedule
+ *        busId:
+ *          type: integer
+ *          description: The bus identifier for the schedule
+ *        templateId:
+ *          type: integer
+ *          description: The template identifier for the schedule
+ *        startTime:
+ *          type: string
+ *          description: The start time of the schedule
+ *        endTime:
+ *          type: string
+ *          description: The end time of the schedule
+ *        status:
+ *          type: integer
+ *          description: The status of the schedule
+ *        createdAt:
+ *          type: string
+ *          description: The date and time the record was created
+ *        updatedAt:
+ *          type: string
+ *          description: The date and time the record was updated
+ */
+
 const Schedule = sequelize.define(
   "schedules",
   {

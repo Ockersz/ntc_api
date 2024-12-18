@@ -1,3 +1,41 @@
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Bus:
+ *      type: object
+ *      required:
+ *        - permitId
+ *        - vehicleRegNo
+ *        - type
+ *        - seatCount
+ *      properties:
+ *         busId:
+ *          type: integer
+ *          description: The unique identifier for a bus
+ *         operatorId:
+ *          type: integer
+ *          description: The identifier for the operator of the bus
+ *         permitId:
+ *          type: string
+ *          description: The permit identifier for the bus
+ *         vehicleRegNo:
+ *          type: string
+ *          description: The vehicle registration number of the bus
+ *         status:
+ *          type: string
+ *          description: The status of the bus
+ *         busType:
+ *          type: string
+ *          description: The type of the bus
+ *         seatCount:
+ *          type: integer
+ *          description: The number of seats in the bus
+ *         routeId:
+ *          type: integer
+ *          description: The route identifier for the bus
+ */
+
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
 
