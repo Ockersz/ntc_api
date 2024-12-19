@@ -1,10 +1,4 @@
-const {
-  Schedule,
-  Bus,
-  Route,
-  RouteCity,
-  TicketPrices,
-} = require("./models/relations");
+const { Schedule, Bus, Route, RouteCity } = require("./models/relations");
 const axios = require("axios");
 const {
   ScheduleTemplate,
@@ -100,55 +94,6 @@ class ScheduleService {
       where,
     });
 
-    // {
-    //   "scheduleId": 1,
-    //   "routeId": 1,
-    //   "busId": 10,
-    //   "templateId": 1,
-    //   "startTime": "2025-01-01T11:30:00.000Z",
-    //   "endTime": "2025-01-01T13:30:00.000Z",
-    //   "status": "1",
-    //   "createdAt": "2024-12-12T17:53:27.000Z",
-    //   "updatedAt": "2024-12-12T17:53:27.000Z",
-    //   "Bus": {
-    //     "busId": 10,
-    //     "operatorId": null,
-    //     "permitId": "9328",
-    //     "vehicleRegNo": "ND-3252",
-    //     "status": "1",
-    //     "busTypeId": 4,
-    //     "seatCount": 55,
-    //     "routeId": 1,
-    //     "createdAt": "2024-12-10T16:27:52.000Z",
-    //     "updatedAt": "2024-12-19T01:14:26.000Z",
-    //     "bus_type": {
-    //       "busTypeId": 4,
-    //       "type": "luxury",
-    //       "price": "100.00"
-    //     }
-    //   },
-    //   "Route": {
-    //     "routeId": 1,
-    //     "routeName": "120",
-    //     "estimatedTime": "2hrs",
-    //     "distance": "40.00",
-    //     "createdAt": "2024-12-10T15:31:14.000Z",
-    //     "updatedAt": "2024-12-10T15:31:14.000Z",
-    //     "RouteCities": [
-    //       {
-    //         "routeCityId": 3,
-    //         "routeId": 1,
-    //         "cityId": 5,
-    //         "sequenceOrder": 3,
-    //         "createdAt": "2024-12-10T15:34:20.000Z",
-    //         "updatedAt": "2024-12-10T15:34:20.000Z"
-    //       }
-    //     ]
-    //   }
-    // },
-
-    //get the price and distance of the route and show the price per seat
-
     const schedules = data.map((schedule) => {
       const { Bus, Route } = schedule;
       const { bus_type } = Bus;
@@ -196,7 +141,13 @@ class ScheduleService {
 
   async getScheduleById(scheduleId) {
     return await Schedule.findByPk(scheduleId, {
-      include: [Bus, Route],
+      include: [
+        {
+          model: Bus,
+          include: [BusType],
+        },
+        Route,
+      ],
     });
   }
 
