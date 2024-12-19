@@ -57,10 +57,12 @@ class ReservationService {
       { expiresIn: "5m" }
     );
     reserve.dataValues.token = reserveToken;
+    reserve.dataValues.ticketPrice = scheduleDetails?.Bus?.bus_type?.price;
     sendMessageToSQS(reserve);
     return {
       reservationToken: reserveToken,
       seatCount: reserve.seatCount,
+      ticketPrice: scheduleDetails?.Bus?.bus_type?.price,
     };
   }
 
