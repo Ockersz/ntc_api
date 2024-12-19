@@ -1,8 +1,13 @@
 const { Bus, BusType } = require("./models/relations");
 
 class BusService {
-  static async createBus(busData) {
-    return await Bus.create(busData);
+  static async createBus(busData, userId) {
+    const busDataReconstructed = {
+      ...busData,
+      operatorId: userId,
+    };
+
+    return await Bus.create(busDataReconstructed);
   }
 
   static async getAllBuses() {
