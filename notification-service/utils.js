@@ -115,6 +115,32 @@ const parseResults = (results) => {
   return { success, failed };
 };
 
+const transporter = nodemailer.createTransport({
+  host: "mail.privateemail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: "info@ockersz.me", // your Namecheap email address
+    pass: "9b6pfuqHbYyb9_p", // your email password
+  },
+});
+
+const sendEmailNew = async (to, subject, html) => {
+  try {
+    let info = await transporter.sendMail({
+      from: '"Ockersz" <info@ockersz.me>', // sender address
+      to: to, // list of receivers
+      subject: subject, // Subject line
+      html: html, // html body
+    });
+    console.log("Message sent: %s", info.messageId);
+    return { status: "success" };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return { status: "failed", error: error.message };
+  }
+};
+
 module.exports = {
   verifyEmailAddresses,
   sendEmail,
