@@ -30,7 +30,7 @@ import { UsersModule } from './users/users.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       entities: [User, Role, UserRole, RoleAccess],
-      synchronize: true,
+      synchronize: false,
     }),
     AuthModule,
     UsersModule,
