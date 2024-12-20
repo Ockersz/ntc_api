@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 require("dotenv").config();
+const nodemailer = require("nodemailer");
 
 // Configure AWS SES
 AWS.config.update({
@@ -115,7 +116,79 @@ const parseResults = (results) => {
   return { success, failed };
 };
 
+const transporter = nodemailer.createTransport({
+  host: "mail.privateemail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: "info@ockersz.me", // your Namecheap email address
+    pass: "9b6pfuqHbYyb9_p", // your email password
+  },
+});
+
+const sendEmailNew = async (to, subject, text) => {
+  try {
+    let info = await transporter.sendMail({
+      from: '"Ockersz" <info@ockersz.me>', // sender address
+      to: to, // list of receivers
+      subject: subject, // Subject line
+      text: text, // plain text body
+    });
+    console.log("Message sent: %s", info.messageId);
+    return { status: "success" };
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+};
+
 module.exports = {
   verifyEmailAddresses,
   sendEmail,
+  sendEmailNew,
 };
+
+// const express = require("express");
+// const nodemailer = require("nodemailer");
+
+// const app = express();
+// const port = 3003;
+
+// // Create a transporter object using the default SMTP transport
+// const transporter = nodemailer.createTransport({
+//   host: "mail.privateemail.com",
+//   port: 587,
+//   secure: false, // true for 465, false for other ports
+//   auth: {
+//     user: "info@ockersz.me", // your Namecheap email address
+//     pass: "9b6pfuqHbYyb9_p", // your email password
+//   },
+// });
+
+// // Function to send email
+// const sendEmail = async (to, subject, text) => {
+//   try {
+//     let info = await transporter.sendMail({
+//       from: '"Ockersz" <info@ockersz.me>', // sender address
+//       to: to, // list of receivers
+//       subject: subject, // Subject line
+//       text: text, // plain text body
+//     });
+//     console.log("Message sent: %s", info.messageId);
+//   } catch (error) {
+//     console.error("Error sending email:", error);
+//   }
+// };
+
+// // Example route to send an email
+// app.get("/send-email", async (req, res) => {
+//   await sendEmail(
+//     "noelockersz@gmail.com",
+//     "Test Email",
+//     "Hello, this is a test email!"
+//   );
+//   res.send("Email sent!");
+// });
+
+// app.listen(port, () => {
+//   console.log(`Server running at http://localhost:${port}/`);
+// });
