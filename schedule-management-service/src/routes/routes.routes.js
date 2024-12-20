@@ -13,7 +13,7 @@ const router = express.Router();
 /**
  * @swagger
  * paths:
- *   /:
+ *   /routes:
  *     post:
  *       summary: Create a new route
  *       operationId: createRoute
@@ -28,7 +28,7 @@ const router = express.Router();
  *       responses:
  *         '200':
  *           description: A list of routes
- *   /{routeId}:
+ *   /routes/{routeId}:
  *     get:
  *       summary: Get a route by ID
  *       operationId: getRouteById
@@ -68,7 +68,7 @@ const router = express.Router();
  *       responses:
  *         '200':
  *           description: Route deleted successfully
- *   /{routeId}/cities:
+ *   /routes/{routeId}/cities:
  *     post:
  *       summary: Assign a city to a route
  *       operationId: assignCityToRoute
@@ -95,7 +95,7 @@ const router = express.Router();
  *       responses:
  *         '200':
  *           description: A list of cities for the route
- *   /{routeId}/cities/{routeCityId}:
+ *   /routes/{routeId}/cities/{routeCityId}:
  *     put:
  *       summary: Update city sequence in a route
  *       operationId: updateCitySequence
@@ -132,7 +132,7 @@ const router = express.Router();
  *       responses:
  *         '200':
  *           description: City removed from route successfully
- *   /{routeId}/buses:
+ *   /routes/{routeId}/buses:
  *     get:
  *       summary: Get buses for a route
  *       operationId: getRouteBuses
@@ -146,7 +146,7 @@ const router = express.Router();
  *       responses:
  *         '200':
  *           description: A list of buses for the route
- *   /{routeId}/schedule-templates:
+ *   /routes/{routeId}/schedule-templates:
  *     get:
  *       summary: Get schedule templates for a route
  *       operationId: getRouteScheduleTemplates
@@ -160,7 +160,7 @@ const router = express.Router();
  *       responses:
  *         '200':
  *           description: A list of schedule templates for the route
- *   /{routeId}/schedules:
+ *   /routes/{routeId}/schedules:
  *     get:
  *       summary: Get schedules for a route
  *       operationId: getRouteSchedules
