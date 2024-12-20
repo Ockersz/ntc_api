@@ -3,7 +3,13 @@ const ScheduleService = require("./schedule.service");
 class ScheduleController {
   async getAllSchedules(req, res) {
     try {
-      const schedules = await ScheduleService.getAllSchedules();
+      const { fromCity, toCity, fromDate, toDate } = req.query;
+      const schedules = await ScheduleService.getAllSchedules(
+        fromCity,
+        toCity,
+        fromDate,
+        toDate
+      );
       res.status(200).json(schedules);
     } catch (error) {
       res.status(500).json({ message: "Error fetching schedules", error });

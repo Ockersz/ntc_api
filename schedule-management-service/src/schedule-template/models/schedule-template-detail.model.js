@@ -1,6 +1,39 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database"); // Adjust this to your DB connection file
 
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *   ScheduleTemplateDetail:
+ *      type: object
+ *      required:
+ *        - templateId
+ *        - busId
+ *        - startTime
+ *        - endTime
+ *        - status
+ *      properties:
+ *        detailId:
+ *          type: integer
+ *          description: The unique identifier for a schedule template detail
+ *        templateId:
+ *          type: integer
+ *          description: The identifier for the schedule template
+ *        busId:
+ *          type: integer
+ *          description: The identifier for the bus
+ *        startTime:
+ *          type: string
+ *          description: The start time of the schedule template detail
+ *        endTime:
+ *          type: string
+ *          description: The end time of the schedule template detail
+ *        status:
+ *          type: integer
+ *          description: The status of the schedule template detail
+ */
+
 const ScheduleTemplateDetail = sequelize.define(
   "scheduletemplatedetail",
   {

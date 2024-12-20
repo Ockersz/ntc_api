@@ -29,4 +29,10 @@ export class User {
     default: 'ntc-user',
   })
   userType: string;
+
+  @Column({
+    type: 'boolean',
+    default: true,
+  })
+  isFirstLogin: boolean;
 }
