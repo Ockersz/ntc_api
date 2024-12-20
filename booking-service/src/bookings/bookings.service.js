@@ -44,7 +44,8 @@ class BookingService {
       reservation.status = "B";
       booking.scheduleId = reservation.scheduleId;
       await reservation.save({ transaction });
-
+      const totalAmount = booking.seatCount * booking.ticketPrice;
+      booking.totalAmount = totalAmount;
       const newBooking = await Bookings.create(booking, { transaction });
 
       await transaction.commit();

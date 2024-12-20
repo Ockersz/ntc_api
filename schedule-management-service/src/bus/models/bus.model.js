@@ -65,9 +65,13 @@ const Bus = sequelize.define(
       type: DataTypes.ENUM("1", "0"), // 1 = Active, 0 = Inactive
       defaultValue: "1",
     },
-    type: {
-      type: DataTypes.ENUM("luxury", "normal"),
+    busTypeId: {
+      type: DataTypes.INTEGER, // 1: Active, 0: Cancelled, 2: Maintenance
       allowNull: false,
+      references: {
+        model: "BusType",
+        key: "busTypeId",
+      },
     },
     seatCount: {
       type: DataTypes.INTEGER,

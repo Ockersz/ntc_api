@@ -126,18 +126,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmailNew = async (to, subject, text) => {
+
+const sendEmailNew = async (to, subject, html) => {
+
   try {
     let info = await transporter.sendMail({
       from: '"Ockersz" <info@ockersz.me>', // sender address
       to: to, // list of receivers
       subject: subject, // Subject line
-      text: text, // plain text body
+      html: html, // html body
     });
     console.log("Message sent: %s", info.messageId);
     return { status: "success" };
   } catch (error) {
     console.error("Error sending email:", error);
+    return { status: "failed", error: error.message };
   }
 };
 
