@@ -1,4 +1,4 @@
-const { Schedule, Bus, Route } = require("./models/relations");
+const { Schedule, Bus, Route, RouteCity } = require("./models/relations");
 const axios = require("axios");
 const {
   ScheduleTemplate,
@@ -8,6 +8,7 @@ const moment = require("moment");
 const sequelize = require("../config/database");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const BusType = require("../bus-type/models/bus-type.model");
 
 class ScheduleService {
   generateServiceToken() {
@@ -18,13 +19,135 @@ class ScheduleService {
     );
   }
 
-  async getAllSchedules() {
-    return await Schedule.findAll();
+  async getAllSchedules(fromCity, toCity, fromDate, toDate) {
+    const include = [
+      {
+        model: Bus,
+        include: [
+          {
+            model: BusType,
+            //as: "", // Ensure alias matches the association
+          },
+        ],
+        where: {}, // Add any Bus-specific filters if needed
+      },
+      {
+        model: Route,
+        include: [],
+      },
+    ];
+
+    const where = {};
+
+    if (fromCity) {
+      include[1].include.push({
+        model: RouteCity,
+        where: { cityId: fromCity },
+      });
+    }
+
+    if (toCity) {
+      include[1].include.push({
+        model: RouteCity,
+        where: { cityId: toCity },
+      });
+    }
+
+    if (fromDate && toDate) {
+      where.startTime = {
+        [sequelize.Op.between]: [fromDate, toDate],
+      };
+    }
+
+    if (!fromCity && !toCity) {
+      delete include[1].include;
+    }
+
+    if (!fromDate && !toDate) {
+      delete where.startTime;
+    }
+
+    // Check if the city combination exists
+    if (fromCity && toCity) {
+      const cityCombinationExists = await RouteCity.findOne({
+        where: { cityId: fromCity },
+        include: [
+          {
+            model: Route,
+            include: [
+              {
+                model: RouteCity,
+                where: { cityId: toCity },
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!cityCombinationExists) {
+        return []; // Return an empty array if the city combination does not exist
+      }
+    }
+
+    const data = await Schedule.findAll({
+      include,
+      where,
+    });
+
+    const schedules = data.map((schedule) => {
+      const { Bus, Route } = schedule;
+      const { bus_type } = Bus;
+
+      let distance = 0;
+      let price = 0;
+
+      if (Route && bus_type) {
+        price = Route.distance * bus_type.price;
+      }
+
+      return {
+        scheduleId: schedule.scheduleId,
+        routeId: Route.routeId,
+        busId: Bus.busId,
+        templateId: schedule.templateId,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        status: schedule.status,
+        perSeatPrice: price,
+        bus: {
+          busId: Bus.busId,
+          permitId: Bus.permitId,
+          vehicleRegNo: Bus.vehicleRegNo,
+          status: Bus.status,
+          busTypeId: Bus.busTypeId,
+          seatCount: Bus.seatCount,
+          busType: {
+            busTypeId: bus_type.busTypeId,
+            type: bus_type.type,
+            price: bus_type.price,
+          },
+        },
+        route: {
+          routeId: Route.routeId,
+          routeName: Route.routeName,
+          estimatedTime: Route.estimatedTime,
+          distance: distance,
+        },
+      };
+    });
+
+    return schedules;
   }
 
   async getScheduleById(scheduleId) {
     return await Schedule.findByPk(scheduleId, {
-      include: [Bus, Route],
+      include: [
+        {
+          model: Bus,
+          include: [BusType],
+        },
+        Route,
+      ],
     });
   }
 

@@ -6,12 +6,15 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
+import { AuthGuard } from 'src/auth.guard';
 import { CreateRoleAccessDto } from './dto/create-role-access.dto';
 import { UpdateRoleAccessDto } from './dto/update-role-access.dto';
 import { RoleAccessService } from './role-access.service';
 
+@UseGuards(AuthGuard)
 @Controller('role-access')
 export class RoleAccessController {
   constructor(private readonly roleAccessService: RoleAccessService) {}
