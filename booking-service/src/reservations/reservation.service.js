@@ -52,7 +52,10 @@ class ReservationService {
 
     const reserve = await Reservation.create(reservation);
     const reserveToken = jwt.sign(
-      { reservationId: reserve.reservationId },
+      {
+        reservationId: reserve.reservationId,
+        ticketPrice: scheduleDetails?.Bus?.bus_type?.price,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "5m" }
     );
