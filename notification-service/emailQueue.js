@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const { sendEmail } = require("./utils");
+const { sendEmail, sendEmailNew } = require("./utils");
 require("dotenv").config();
 // Configure the AWS SDK
 
@@ -23,7 +23,7 @@ async function pollMessagesFromSQS() {
         // Process the message
 
         const email = JSON.parse(message.Body);
-        const results = await sendEmail(
+        const results = await sendEmailNew(
           email.recipient,
           email.subject,
           email.body
@@ -38,7 +38,7 @@ async function pollMessagesFromSQS() {
             })
             .promise();
         } else {
-          await sendEmail(
+          await sendEmailNew(
             "shaheinockersz1234@gmail.com",
             "Email not sent to " + email.recipient,
             "The email was not sent to " +
