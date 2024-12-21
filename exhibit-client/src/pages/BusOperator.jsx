@@ -87,7 +87,7 @@ const endpoints = [
 const BusOperator = ({ theme }) => {
   return (
     <ThemeProvider theme={theme}>
-      <DynamicEndpoint theme={theme} endpoints={endpoints} />
+      <DynamicEndpoint theme={theme} endpointInput={endpoints} />
     </ThemeProvider>
   );
 };

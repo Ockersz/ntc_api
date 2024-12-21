@@ -151,82 +151,83 @@ const DynamicEndpoint = ({ theme, endpointInput }) => {
       endpointObj.url.startsWith("http://")
         ? endpointObj.url
         : `https://${endpointObj.url}`;
+
     const isLogin = checkURL(url, "login");
-    // const isReservation = checkURL(url, "reservation");
+
+    const constructData = (inputs, type) => {
+      return inputs
+        .filter((input) => input.type === type)
+        .reduce((acc, input) => {
+          acc[input.name] = input.value ? input.value : input.defaultVal;
+          return acc;
+        }, {});
+    };
+
+    const updateEndpoints = (url, response, isError = false) => {
+      let prevEndpoints = endpoints;
+      const responseObj = {
+        status: response.status,
+        data: isError
+          ? [{ message: response.response?.data?.message }]
+          : response.data,
+      };
+
+      const index = endpoints.findIndex(
+        (endpoint) =>
+          endpoint.url === endpointObj.url &&
+          endpoint.method === endpointObj.method.toUpperCase()
+      );
+
+      prevEndpoints[index].response = responseObj;
+      setEndpoints([...prevEndpoints]);
+    };
 
     try {
       if (isLogin) {
         handleLogin(url, endpointObj);
-      } else {
-        const method = endpointObj.method;
-        const inputs = endpointObj.inputs;
-        const bodyInputs = inputs.filter((input) => input.type === "body");
-        const paramInputs = inputs.filter((input) => input.type === "param");
-        const queryInputs = inputs.filter((input) => input.type === "query");
-
-        const data =
-          bodyInputs &&
-          bodyInputs.reduce((acc, input) => {
-            acc[input.name] = input.value ? input.value : input.defaultVal;
-            return acc;
-          }, {});
-
-        let response = null;
-
-        switch (method) {
-          case "POST":
-            response = await sendPostRequest(url, data);
-            break;
-          case "GET":
-            //if has params replace the url with the params
-            if (paramInputs.length > 0) {
-              const param = paramInputs[0];
-              url = url.replace(`:${param.name}`, param.value);
-            }
-
-            //if has query params add them to the url
-            if (queryInputs.length > 0) {
-              const query = queryInputs.reduce((acc, input) => {
-                acc[input.name] = input.value ? input.value : input.defaultVal;
-                return acc;
-              }, {});
-              url = `${url}?${new URLSearchParams(query).toString()}`;
-            }
-            console.log(url);
-            response = await sendGetRequest(url);
-            break;
-          case "PUT":
-            response = await sendPutRequest(url, data);
-            break;
-          case "DELETE":
-            response = await sendDeleteRequest(url);
-            break;
-          default:
-            break;
-        }
-
-        if (response.status === 200) {
-          let prevEndpoints = endpoints;
-
-          const reconstructedResponse = {
-            status: response.status,
-            data: response.data,
-          };
-
-          prevEndpoints[0].response = reconstructedResponse;
-          setEndpoints([...prevEndpoints]);
-        } else {
-          let prevEndpoints = endpoints;
-          const errorResponse = {
-            status: response.status,
-            data: [{ message: response.response?.data?.message }],
-          };
-
-          prevEndpoints[0].response = errorResponse;
-          setEndpoints([...prevEndpoints]);
-        }
+        return;
       }
-    } catch (error) {}
+
+      const { method, inputs } = endpointObj;
+      const bodyData = constructData(inputs, "body");
+      const paramData = constructData(inputs, "param");
+      const queryData = constructData(inputs, "query");
+
+      if (paramData) {
+        Object.keys(paramData).forEach((key) => {
+          url = url.replace(`:${key}`, paramData[key]);
+        });
+      }
+
+      if (Object.keys(queryData).length > 0) {
+        url = `${url}?${new URLSearchParams(queryData).toString()}`;
+      }
+      let response = null;
+      switch (method) {
+        case "POST":
+          response = await sendPostRequest(url, bodyData);
+          break;
+        case "GET":
+          response = await sendGetRequest(url);
+          break;
+        case "PUT":
+          response = await sendPutRequest(url, bodyData);
+          break;
+        case "DELETE":
+          response = await sendDeleteRequest(url);
+          break;
+        default:
+          throw new Error(`Unsupported method: ${method}`);
+      }
+
+      if (response.status === 200 || response.status === 201) {
+        updateEndpoints(url, response);
+      } else {
+        updateEndpoints(url, response, true);
+      }
+    } catch (error) {
+      console.error("Error handling the endpoint:", error);
+    }
   };
 
   return (
@@ -308,18 +309,18 @@ const DynamicEndpoint = ({ theme, endpointInput }) => {
                 </Button>
               </Box>
             </Box>
-            {endpoint.response && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  mb: 2,
-                }}
-              >
-                <Box sx={{ display: "flex", mb: 2 }}>
-                  <Typography variant="h6">Responses</Typography>
-                </Box>
 
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", mb: 2 }}>
+                <Typography variant="h6">Responses</Typography>
+              </Box>
+              {endpoint.response && (
                 <Box
                   key={index}
                   sx={{
@@ -336,8 +337,8 @@ const DynamicEndpoint = ({ theme, endpointInput }) => {
                     {JSON.stringify(endpoint.response.data)}
                   </Typography>
                 </Box>
-              </Box>
-            )}
+              )}
+            </Box>
           </Box>
         ))}
     </Box>
