@@ -1,18 +1,232 @@
-import { Box, Paper, TextField, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid2";
-import React, { useState } from "react";
+import { Box, Button, TextField, Typography } from "@mui/material";
+import axios from "axios";
+import React, { useLayoutEffect, useState } from "react";
 
-const DynamicEndpoint = ({ theme, endpoints }) => {
-  const [inputValues, setInputValues] = useState(
-    endpoints && endpoints.map((endpoint) => endpoint.inputs.map(() => ""))
-  );
+const DynamicEndpoint = ({ theme, endpointInput }) => {
+  const [endpoints, setEndpoints] = useState([
+    {
+      title: null,
+      description: null,
+      url: null,
+      method: null,
+      inputs: [{ name: null, defaultVal: null, type: null, value: null }],
+    },
+  ]);
 
-  console.log("DynamicEndpoint -> inputValues", endpoints);
+  useLayoutEffect(() => {
+    setEndpoints(endpointInput);
+  }, [endpointInput]);
 
-  const handleInputChange = (endpointIndex, inputIndex, value) => {
-    const newInputValues = [...inputValues];
-    newInputValues[endpointIndex][inputIndex] = value;
-    setInputValues(newInputValues);
+  const checkURL = (url, string) => {
+    return url.endsWith(string);
+  };
+
+  async function sendPostRequest(url, data) {
+    try {
+      const response = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          reservationToken: localStorage.getItem("reservationToken") || null,
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+      return response;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async function sendGetRequest(url) {
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          reservationToken: localStorage.getItem("reservationToken") || null,
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+      return response;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async function sendPutRequest(url, data) {
+    try {
+      const response = await axios.put(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          reservationToken: localStorage.getItem("reservationToken") || null,
+        },
+      });
+      return response;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async function sendDeleteRequest(url) {
+    try {
+      const response = await axios.delete(url, {
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          reservationToken: localStorage.getItem("reservationToken") || null,
+        },
+      });
+      return response;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async function handleLogin(url, endpointObj) {
+    const method = endpointObj.method;
+    const inputs = endpointObj.inputs;
+    try {
+      const data =
+        inputs &&
+        inputs.reduce((acc, input) => {
+          acc[input.name] = input.value ? input.value : input.defaultVal;
+          return acc;
+        }, {});
+      let response = null;
+
+      switch (method) {
+        case "POST":
+          response = await sendPostRequest(url, data);
+          break;
+        case "GET":
+          response = await sendGetRequest(url);
+          break;
+        case "PUT":
+          response = await sendPutRequest(url);
+          break;
+        case "DELETE":
+          response = await sendDeleteRequest(url);
+          break;
+        default:
+          break;
+      }
+
+      if (response.status === 200) {
+        let prevEndpoints = endpoints;
+
+        const reconstructedResponse = {
+          status: response.status,
+          data: [
+            {
+              message: response.data?.message,
+              firstLogin: response.data?.firstLogin,
+            },
+          ],
+        };
+        if (response.status === 200 && response.data) {
+          localStorage.setItem("accessToken", response.data?.accessToken);
+          localStorage.setItem("refreshToken", response.data?.refreshToken);
+        }
+        prevEndpoints[0].response = reconstructedResponse;
+        setEndpoints([...prevEndpoints]);
+      } else {
+        let prevEndpoints = endpoints;
+        const errorResponse = {
+          status: response.status,
+          data: [{ message: response.response?.data?.message }],
+        };
+
+        prevEndpoints[0].response = errorResponse;
+        setEndpoints([...prevEndpoints]);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+
+  const handleRun = async (endpointObj) => {
+    let url =
+      endpointObj.url.startsWith("https://") ||
+      endpointObj.url.startsWith("http://")
+        ? endpointObj.url
+        : `https://${endpointObj.url}`;
+    const isLogin = checkURL(url, "login");
+    // const isReservation = checkURL(url, "reservation");
+
+    try {
+      if (isLogin) {
+        handleLogin(url, endpointObj);
+      } else {
+        const method = endpointObj.method;
+        const inputs = endpointObj.inputs;
+        const bodyInputs = inputs.filter((input) => input.type === "body");
+        const paramInputs = inputs.filter((input) => input.type === "param");
+        const queryInputs = inputs.filter((input) => input.type === "query");
+
+        const data =
+          bodyInputs &&
+          bodyInputs.reduce((acc, input) => {
+            acc[input.name] = input.value ? input.value : input.defaultVal;
+            return acc;
+          }, {});
+
+        let response = null;
+
+        switch (method) {
+          case "POST":
+            response = await sendPostRequest(url, data);
+            break;
+          case "GET":
+            //if has params replace the url with the params
+            if (paramInputs.length > 0) {
+              const param = paramInputs[0];
+              url = url.replace(`:${param.name}`, param.value);
+            }
+
+            //if has query params add them to the url
+            if (queryInputs.length > 0) {
+              const query = queryInputs.reduce((acc, input) => {
+                acc[input.name] = input.value ? input.value : input.defaultVal;
+                return acc;
+              }, {});
+              url = `${url}?${new URLSearchParams(query).toString()}`;
+            }
+            console.log(url);
+            response = await sendGetRequest(url);
+            break;
+          case "PUT":
+            response = await sendPutRequest(url, data);
+            break;
+          case "DELETE":
+            response = await sendDeleteRequest(url);
+            break;
+          default:
+            break;
+        }
+
+        if (response.status === 200) {
+          let prevEndpoints = endpoints;
+
+          const reconstructedResponse = {
+            status: response.status,
+            data: response.data,
+          };
+
+          prevEndpoints[0].response = reconstructedResponse;
+          setEndpoints([...prevEndpoints]);
+        } else {
+          let prevEndpoints = endpoints;
+          const errorResponse = {
+            status: response.status,
+            data: [{ message: response.response?.data?.message }],
+          };
+
+          prevEndpoints[0].response = errorResponse;
+          setEndpoints([...prevEndpoints]);
+        }
+      }
+    } catch (error) {}
   };
 
   return (
@@ -20,53 +234,111 @@ const DynamicEndpoint = ({ theme, endpoints }) => {
       <Typography variant="h4" sx={{ mb: 3 }}>
         Endpoints Configuration
       </Typography>
+
       {endpoints &&
-        endpoints?.map((endpoint, index) => (
-          <Paper elevation={3} sx={{ p: 2, mb: 3 }} key={index}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body1">
+        endpoints.map((endpoint, index) => (
+          <Box
+            display="grid"
+            gap="10px"
+            gridTemplateColumns="repeat(2, 1fr)"
+            key={index}
+          >
+            <Box
+              sx={{ display: "flex", flexDirection: "column", mb: 2 }}
+              key={index}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="body1" sx={{ mb: 1 }}>
                   <strong>Endpoint URL:</strong> {endpoint.url}
                 </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ mb: 1 }}>
                   <strong>HTTP Method:</strong> {endpoint.method}
                 </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6">Inputs</Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
                 {endpoint.inputs.map((input, inputIndex) => (
                   <Box key={inputIndex} sx={{ display: "flex", mb: 2 }}>
                     <TextField
                       label={input.name}
-                      value={inputValues[index][inputIndex]}
-                      onChange={(e) =>
-                        handleInputChange(index, inputIndex, e.target.value)
-                      }
+                      name={input.name}
+                      value={input.value ? input.value : input.defaultVal}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        input.value = newValue;
+                        let prevEndpoints = endpoints;
+
+                        prevEndpoints[index].inputs[inputIndex].value =
+                          newValue;
+                        setEndpoints([...prevEndpoints]);
+                      }}
                       sx={{ mr: 2 }}
                       fullWidth
                     />
                   </Box>
                 ))}
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6">Responses</Typography>
-                {endpoint &&
-                  endpoint.response &&
-                  endpoint.response.map((response, responseIndex) => (
-                    <Box key={responseIndex} sx={{ mb: 2 }}>
-                      <Typography variant="body1">
-                        <strong>Response Code:</strong> {response.code}
-                      </Typography>
-                      <Typography variant="body1">
-                        <strong>Response Data:</strong> {response.data}
-                      </Typography>
-                    </Box>
-                  ))}
-              </Grid>
-            </Grid>
-          </Paper>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleRun(endpoint)}
+                >
+                  Send Request
+                </Button>
+              </Box>
+            </Box>
+            {endpoint.response && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  mb: 2,
+                }}
+              >
+                <Box sx={{ display: "flex", mb: 2 }}>
+                  <Typography variant="h6">Responses</Typography>
+                </Box>
+
+                <Box
+                  key={index}
+                  sx={{
+                    display: "block",
+                    justifyContent: "space-between",
+                    mb: 4,
+                  }}
+                >
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Response Code:</strong> {endpoint.response.status}
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>Response Data:</strong>{" "}
+                    {JSON.stringify(endpoint.response.data)}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
         ))}
     </Box>
   );
