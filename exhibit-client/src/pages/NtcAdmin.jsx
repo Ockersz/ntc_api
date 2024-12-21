@@ -32,7 +32,7 @@ const endpoints = [
     description: "Get a city by ID from the database",
     url: "https://www.ockersz.me/cities/:id",
     method: "GET",
-    inputs: [{ name: "id", defaultVal: "1" }],
+    inputs: [{ name: "id", defaultVal: "1", type: "param" }],
   },
   {
     title: "Update City",
