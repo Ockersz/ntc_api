@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const authMiddleware = (req, res, next) => {
-  const authorizationHeader = req.headers["authorization"];
+  const authorizationHeader = req.headers["Authorization"];
 
   if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
     return res
