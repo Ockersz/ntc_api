@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const authMiddleware = (req, res, next) => {
-  const authorizationHeader = req.headers["Authorization"];
+  const authorizationHeader = req.headers["authorization"];
 
   if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
     return res
@@ -15,7 +15,6 @@ const authMiddleware = (req, res, next) => {
   try {
     // Verify the JWT token
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-
     // Check if the request comes from a trusted service
     if (
       payload.service &&
