@@ -1,7 +1,9 @@
-const express = require("express"),
-  bodyParser = require("body-parser"),
-  swaggerJsdoc = require("swagger-jsdoc"),
-  swaggerUi = require("swagger-ui-express");
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+
 const busRoutes = require("./src/bus/bus.routes");
 const sequelize = require("./src/config/database");
 const cityRoutes = require("./src/city/city.routes");
@@ -31,26 +33,25 @@ const swaggerDocs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(express.json());
 app.use(authMiddleware);
+
+// Enable CORS for all origins
+app.use(
+  cors({
+    origin: true, // Allow any origin
+    methods: "OPTIONS, GET, POST, PUT, PATCH, DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  })
+);
+
 app.use("/buses", busRoutes);
 app.use("/cities", cityRoutes);
 app.use("/routes", routeRoutes);
 app.use("/schedule-template", scheduleTemplateRoutes);
 app.use("/schedules", scheduleRoutes);
 
-//allow cors
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "OPTIONS, GET, POST, PUT, PATCH, DELETE"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
-
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-  //connect to database
+  // Connect to database
   sequelize
     .authenticate()
     .then(() => {
