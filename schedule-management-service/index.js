@@ -13,6 +13,7 @@ const scheduleRoutes = require("./src/schedules/schedule.routes");
 const authMiddleware = require("./middleware/auth");
 
 const app = express();
+app.use(cors());
 const port = 3001;
 
 const options = {
@@ -33,15 +34,6 @@ const swaggerDocs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(express.json());
 app.use(authMiddleware);
-
-// Enable CORS for all origins
-app.use(
-  cors({
-    origin: true, // Allow any origin
-    methods: "OPTIONS, GET, POST, PUT, PATCH, DELETE",
-    allowedHeaders: "Content-Type, Authorization",
-  })
-);
 
 app.use("/buses", busRoutes);
 app.use("/cities", cityRoutes);
