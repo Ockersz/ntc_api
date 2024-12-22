@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const City = require("./models/city.model");
 
 class CityService {
@@ -7,7 +8,15 @@ class CityService {
     }
 
     const exsist = await City.findOne({
-      where: { name: cityData.name },
+      where: City.sequelize.where(
+        City.sequelize.fn(
+          "REPLACE",
+          City.sequelize.fn("LOWER", City.sequelize.col("name")),
+          " ",
+          ""
+        ),
+        cityData.name.toLowerCase().replace(/\s/g, "")
+      ),
       attributes: ["name", "cityId"],
     });
 
@@ -15,11 +24,17 @@ class CityService {
       return res.status(400).json({ message: "City already exsist" });
     }
 
-    const transaction = await sequelize.transaction();
+    const transaction = await City.sequelize.transaction();
     try {
       const city = await City.create(cityData, { transaction });
+
+      const newCityData = {
+        name: city.name,
+        cityId: city.cityId,
+      };
+
       await transaction.commit();
-      return res.status(201).json(city);
+      return res.status(201).json(newCityData);
     } catch (error) {
       await transaction.rollback();
       return res.status(500).json({ message: error.message });
@@ -29,6 +44,9 @@ class CityService {
   static async getAllCities() {
     return await City.findAll({
       attributes: ["name", "cityId"],
+      where: {
+        status: 1,
+      },
     });
   }
 
@@ -37,8 +55,12 @@ class CityService {
       return res.status(400).json({ message: "City ID is required" });
     }
 
-    const city = await City.findByPk(cityId, {
+    const city = await City.findOne({
       attributes: ["name", "cityId"],
+      where: {
+        cityId: cityId,
+        status: 1,
+      },
     });
 
     if (!city) {
@@ -58,7 +80,25 @@ class CityService {
     }
 
     const cityExsist = await City.findOne({
-      where: { name: updateData.name, id: { [Op.ne]: cityId } },
+      where: {
+        [Op.and]: [
+          City.sequelize.where(
+            City.sequelize.fn(
+              "REPLACE",
+              City.sequelize.fn("LOWER", City.sequelize.col("name")),
+              " ",
+              ""
+            ),
+            updateData.name.toLowerCase().replace(/\s/g, "")
+          ),
+          {
+            cityId: {
+              [Op.ne]: cityId,
+            },
+            status: 1,
+          },
+        ],
+      },
     });
 
     if (cityExsist) {
@@ -70,7 +110,7 @@ class CityService {
     };
 
     const cityUpdated = await City.update(cityData, {
-      where: { id: cityId },
+      where: { cityId: cityId },
     });
 
     if (!cityUpdated) {
@@ -85,13 +125,23 @@ class CityService {
       return res.status(400).json({ message: "City ID is required" });
     }
 
-    const city = await City.findByPk(cityId);
+    const city = await City.findOne({
+      where: {
+        cityId: cityId,
+        status: 1,
+      },
+    });
 
     if (!city) {
       return res.status(404).json({ message: "City not found" });
     }
 
-    await city.destroy();
+    const cityDeleted = await City.update(
+      { status: 0 },
+      {
+        where: { cityId: cityId },
+      }
+    );
     return res.status(200).json({ message: "City deleted successfully" });
   }
 }

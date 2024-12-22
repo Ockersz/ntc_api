@@ -5,7 +5,7 @@ class CityController {
     try {
       return await CityService.createCity(req.body, res);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
@@ -30,7 +30,7 @@ class CityController {
     try {
       return await CityService.updateCity(req.params.cityId, req.body, res);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
