@@ -1,9 +1,12 @@
-const { Schedule, Bus, Route, RouteCity } = require("./models/relations");
-const axios = require("axios");
 const {
+  Schedule,
+  Bus,
+  Route,
   ScheduleTemplate,
-  ScheduleTemplateDetail,
-} = require("../schedule-template/models/relations");
+  City,
+  RouteCity,
+} = require("./models/relations");
+const axios = require("axios");
 const moment = require("moment");
 const sequelize = require("../config/database");
 require("dotenv").config();
@@ -19,136 +22,127 @@ class ScheduleService {
     );
   }
 
-  async getAllSchedules(fromCity, toCity, fromDate, toDate) {
-    const include = [
-      {
-        model: Bus,
-        include: [
-          {
-            model: BusType,
-            //as: "", // Ensure alias matches the association
-          },
-        ],
-        where: {}, // Add any Bus-specific filters if needed
-      },
-      {
-        model: Route,
-        include: [],
-      },
-    ];
+  async getAllSchedules(fromCity, toCity, fromDate, toDate, res) {
+    const whereClause = {};
 
-    const where = {};
-
-    if (fromCity) {
-      include[1].include.push({
-        model: RouteCity,
-        where: { cityId: fromCity },
-      });
-    }
-
-    if (toCity) {
-      include[1].include.push({
-        model: RouteCity,
-        where: { cityId: toCity },
-      });
-    }
-
-    if (fromDate && toDate) {
-      where.startTime = {
-        [sequelize.Op.between]: [fromDate, toDate],
-      };
-    }
-
-    if (!fromCity && !toCity) {
-      delete include[1].include;
-    }
-
-    if (!fromDate && !toDate) {
-      delete where.startTime;
-    }
-
-    // Check if the city combination exists
     if (fromCity && toCity) {
-      const cityCombinationExists = await RouteCity.findOne({
-        where: { cityId: fromCity },
-        include: [
-          {
-            model: Route,
-            include: [
-              {
-                model: RouteCity,
-                where: { cityId: toCity },
-              },
-            ],
-          },
-        ],
+      const fromCityDetails = await City.findOne({
+        where: { cityName: fromCity },
+      });
+      if (!fromCityDetails) {
+        return res.status(404).json({ message: "From city not found." });
+      }
+
+      const toCityDetails = await City.findOne({
+        where: { cityName: toCity },
       });
 
-      if (!cityCombinationExists) {
-        return []; // Return an empty array if the city combination does not exist
+      if (!toCityDetails) {
+        return res.status(404).json({ message: "To city not found." });
       }
+
+      //get routcity details which has both from and to city
+      const routeCities = await RouteCity.findAll({
+        where: {
+          cityId: [fromCityDetails.cityId, toCityDetails.cityId],
+        },
+        group: ["routeId"],
+        having: sequelize.literal("count(routeId) = 2"),
+      });
+
+      if (routeCities.length === 0) {
+        return res.status(404).json({ message: "No routes found." });
+      }
+
+      whereClause.routeId = routeCities.map((routeCity) => routeCity.routeId);
     }
 
-    const data = await Schedule.findAll({
-      include,
-      where,
-    });
+    if (fromDate) {
+      whereClause.startTime = { [sequelize.Op.gte]: fromDate };
+    }
+    if (toDate) {
+      whereClause.endTime = { [sequelize.Op.lte]: toDate };
+    }
 
-    const schedules = data.map((schedule) => {
-      const { Bus, Route } = schedule;
-      const { bus_type } = Bus;
-
-      let distance = 0;
-      let price = 0;
-
-      if (Route && bus_type) {
-        price = Route.distance * bus_type.price;
-      }
-
-      return {
-        scheduleId: schedule.scheduleId,
-        routeId: Route.routeId,
-        busId: Bus.busId,
-        templateId: schedule.templateId,
-        startTime: schedule.startTime,
-        endTime: schedule.endTime,
-        status: schedule.status,
-        perSeatPrice: price,
-        bus: {
-          busId: Bus.busId,
-          permitId: Bus.permitId,
-          vehicleRegNo: Bus.vehicleRegNo,
-          status: Bus.status,
-          busTypeId: Bus.busTypeId,
-          seatCount: Bus.seatCount,
-          busType: {
-            busTypeId: bus_type.busTypeId,
-            type: bus_type.type,
-            price: bus_type.price,
-          },
-        },
-        route: {
-          routeId: Route.routeId,
-          routeName: Route.routeName,
-          estimatedTime: Route.estimatedTime,
-          distance: distance,
-        },
-      };
-    });
-
-    return schedules;
-  }
-
-  async getScheduleById(scheduleId) {
-    return await Schedule.findByPk(scheduleId, {
+    const schedules = await Schedule.findAll({
+      where: whereClause,
       include: [
         {
           model: Bus,
-          include: [BusType],
+          include: [
+            {
+              model: BusType,
+              attributes: {
+                exclude: ["createdAt", "updatedAt"],
+              },
+            },
+          ],
+          attributes: {
+            exclude: [
+              "busTypeId",
+              "createdAt",
+              "updatedAt",
+              "status",
+              "operatorId",
+            ],
+          },
         },
-        Route,
+        {
+          model: Route,
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "status"],
+          },
+        },
       ],
+      attributes: {
+        exclude: ["templateId", "createdAt", "updatedAt"],
+      },
     });
+
+    return res.status(200).json(schedules);
+  }
+
+  async getScheduleById(scheduleId, res) {
+    const schedule = await Schedule.findOne({
+      where: { scheduleId },
+      include: [
+        {
+          model: Bus,
+          include: [
+            {
+              model: BusType,
+              attributes: {
+                exclude: ["createdAt", "updatedAt"],
+              },
+            },
+          ],
+          attributes: {
+            exclude: [
+              "busTypeId",
+              "createdAt",
+              "updatedAt",
+              "status",
+              "operatorId",
+            ],
+          },
+        },
+        {
+          model: Route,
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "status"],
+          },
+        },
+      ],
+      attributes: {
+        exclude: ["templateId", "createdAt", "updatedAt"],
+      },
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ message: "Schedule not found." });
+    }
+
+    return res.status(200).json(schedule);
   }
 
   async processSchedule(routeId, dateRange, templateIds) {
