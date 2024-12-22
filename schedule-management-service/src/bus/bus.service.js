@@ -1,5 +1,5 @@
-const { Bus, BusType } = require("./models/relations");
-
+const { Bus, BusType, Routes } = require("./models/relations");
+const { Op } = require("sequelize");
 class BusService {
   static async createBus(busData, userId, res) {
     if (
@@ -16,6 +16,40 @@ class BusService {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    const routeExists = await Routes.findOne({
+      where: { routeId: busData.routeId, status: "1" },
+    });
+
+    if (!routeExists) {
+      return res.status(404).json({ message: "Route not found" });
+    }
+
+    const busTypeExists = await BusType.findOne({
+      where: { busTypeId: busData.busTypeId },
+    });
+
+    if (!busTypeExists) {
+      return res.status(404).json({ message: "Bus Type not found" });
+    }
+
+    const vehicleRegNoExists = await Bus.findOne({
+      where: [{ vehicleRegNo: busData.vehicleRegNo, status: "1" }],
+    });
+
+    if (vehicleRegNoExists) {
+      return res.status(400).json({
+        message: "Vehicle Registration Number  already in use",
+      });
+    }
+
+    const permitIdExists = await Bus.findOne({
+      where: { permitId: busData.permitId, status: "1" },
+    });
+
+    if (permitIdExists) {
+      return res.status(400).json({ message: "Permit ID already in use" });
+    }
+
     const busDataReconstructed = {
       ...busData,
       operatorId: userId,
@@ -26,36 +60,63 @@ class BusService {
     try {
       const bus = await Bus.create(busDataReconstructed, { transaction });
       await transaction.commit();
-      return res.status(201).json(bus);
+      const reconstructedBus = await Bus.findOne({
+        where: { busId: bus.busId },
+        include: [
+          {
+            model: BusType,
+            attributes: { exclude: ["busTypeId"] },
+          },
+          {
+            model: Routes,
+            attributes: {
+              exclude: ["createdAt", "updatedAt", "status", "routeId"],
+            },
+          },
+        ],
+        attributes: ["busId", "permitId", "vehicleRegNo", "seatCount"],
+      });
+      return res.status(201).json(reconstructedBus);
     } catch (error) {
       transaction.rollback();
       return res.status(500).json({ message: error.message });
     }
   }
 
-  static async getAllBuses(userId, res) {
+  static async getAllBuses(userId, res, vehicleRegNo) {
     if (userId === undefined || userId === null) {
       return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    let whereClause = {
+      operatorId: userId,
+      status: "1",
+    };
+
+    if (vehicleRegNo) {
+      whereClause = {
+        ...whereClause,
+        vehicleRegNo: {
+          [Op.like]: `%${vehicleRegNo}%`,
+        },
+      };
     }
 
     const busses = await Bus.findAll({
       include: [
         {
           model: BusType,
+          attributes: { exclude: ["busTypeId"] },
+        },
+        {
+          model: Routes,
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "status", "routeId"],
+          },
         },
       ],
-      attributes: [
-        "busId",
-        "permitId",
-        "vehicleRegNo",
-        "status",
-        "seatCount",
-        "routeId",
-        "busTypeId",
-      ],
-      where: {
-        operatorId: userId,
-      },
+      attributes: ["busId", "permitId", "vehicleRegNo", "seatCount"],
+      where: whereClause,
     });
 
     if (busses.length === 0) {
@@ -63,17 +124,20 @@ class BusService {
         include: [
           {
             model: BusType,
+            attributes: { exclude: ["busTypeId"] },
           },
         ],
         attributes: [
           "busId",
           "permitId",
           "vehicleRegNo",
-          "status",
           "seatCount",
           "routeId",
-          "busTypeId",
         ],
+        where: {
+          ...whereClause,
+          operatorId: null,
+        },
       });
 
       return res.status(200).json(bussesWithNoOperator);
@@ -87,23 +151,22 @@ class BusService {
       return res.status(400).json({ message: "Bus ID is required" });
     }
 
-    const bus = await Bus.findByPk(busId);
-
-    if (!bus) {
-      return res.status(404).json({ message: "Bus not found" });
-    }
-
-    return res.status(200).json(bus);
-  }
-
-  static async getBusByVehicleRegNo(vehicleRegNo, res) {
-    if (!vehicleRegNo) {
-      return res
-        .status(400)
-        .json({ message: "Vehicle Registration Number is required" });
-    }
-
-    const bus = await Bus.findOne({ where: { vehicleRegNo } });
+    const bus = await Bus.findOne({
+      where: { busId, status: "1" },
+      include: [
+        {
+          model: BusType,
+          attributes: { exclude: ["busTypeId"] },
+        },
+        {
+          model: Routes,
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "status", "routeId"],
+          },
+        },
+      ],
+      attributes: ["busId", "permitId", "vehicleRegNo", "seatCount"],
+    });
 
     if (!bus) {
       return res.status(404).json({ message: "Bus not found" });
@@ -118,15 +181,15 @@ class BusService {
     }
 
     if (
-      !updateData.vehicleRegNo ||
-      !updateData.busTypeId ||
-      !updateData.seatCount ||
+      !updateData.vehicleRegNo &&
+      !updateData.busTypeId &&
+      !updateData.seatCount &&
       !updateData.routeId
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const bus = await Bus.findByPk(busId);
+    const bus = await Bus.findOne({ where: { busId, status: "1" } });
 
     if (!bus) {
       return res.status(404).json({ message: "Bus not found" });
@@ -145,7 +208,7 @@ class BusService {
     const busExists = await Bus.findOne({
       where: {
         vehicleRegNo: updateData.vehicleRegNo,
-        id: { [Bus.sequelize.Op.ne]: busId },
+        busId: { [Op.ne]: busId },
       },
     });
 
@@ -153,6 +216,34 @@ class BusService {
       return res
         .status(400)
         .json({ message: "Vehicle Registration Number already in use" });
+    }
+
+    const routeExists = await Routes.findOne({
+      where: { routeId: updateData.routeId, status: "1" },
+    });
+
+    if (!routeExists) {
+      return res.status(404).json({ message: "Route not found" });
+    }
+
+    const busTypeExists = await BusType.findOne({
+      where: { busTypeId: updateData.busTypeId },
+    });
+
+    if (!busTypeExists) {
+      return res.status(404).json({ message: "Bus Type not found" });
+    }
+
+    const permitIdExists = await Bus.findOne({
+      where: {
+        permitId: updateData.permitId,
+        status: "1",
+        busId: { [Op.ne]: busId },
+      },
+    });
+
+    if (permitIdExists) {
+      return res.status(400).json({ message: "Permit ID already in use" });
     }
 
     if (updateData.seatCount < 0 || updateData.seatCount > 100) {
@@ -171,9 +262,26 @@ class BusService {
 
     const updated = await bus.update(busData, { where: { busId } });
 
+    const reconstructedBus = await Bus.findOne({
+      where: { busId: updated.busId },
+      include: [
+        {
+          model: BusType,
+          attributes: { exclude: ["busTypeId"] },
+        },
+        {
+          model: Routes,
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "status", "routeId"],
+          },
+        },
+      ],
+      attributes: ["busId", "permitId", "vehicleRegNo", "seatCount"],
+    });
+
     return res.status(200).json({
       message: "Bus updated successfully",
-      bus: updated,
+      bus: reconstructedBus,
     });
   }
 
@@ -186,7 +294,7 @@ class BusService {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const bus = await Bus.findByPk(busId);
+    const bus = await Bus.findOne({ where: { busId, status: "1" } });
 
     if (!bus) {
       return res.status(404).json({ message: "Bus not found" });
@@ -198,7 +306,7 @@ class BusService {
         .json({ message: "Unauthorized: You are not the owner of this bus" });
     }
 
-    const deleted = await bus.update(
+    await bus.update(
       {
         status: "0",
       },
@@ -207,7 +315,6 @@ class BusService {
 
     return res.status(200).json({
       message: "Bus deleted successfully",
-      bus: deleted,
     });
   }
 }

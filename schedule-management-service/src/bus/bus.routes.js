@@ -88,29 +88,6 @@ const BusController = require("./bus.controller");
  *                  description: The bus was not found
  *              500:
  *                  description: Some server error
- *
- * /buses/vehicle/{vehicleRegNo}:
- *   get:
- *     summary: Get a bus by vehicle registration number
- *     tags: [Buses]
- *     parameters:
- *       - in: path
- *         name: vehicleRegNo
- *         schema:
- *           type: string
- *         required: true
- *         description: The vehicle registration number
- *     responses:
- *       200:
- *         description: The bus was successfully found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Bus'
- *       404:
- *         description: The bus was not found
- *       500:
- *         description: Some server error
  */
 
 const router = express.Router();
@@ -118,7 +95,6 @@ const router = express.Router();
 router.post("/", BusController.createBus);
 router.get("/", BusController.getAllBuses);
 router.get("/:busId", BusController.getBusById);
-router.get("/vehicle/:vehicleRegNo", BusController.getBusByVehicleRegNo);
 router.put("/:busId", BusController.updateBus);
 router.delete("/:busId", BusController.deleteBus);
 

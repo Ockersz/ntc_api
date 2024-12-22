@@ -13,7 +13,8 @@ class BusController {
   static async getAllBuses(req, res) {
     try {
       const userId = req.user.sub;
-      return await BusService.getAllBuses(userId, res);
+      const vehicleRegNo = req.query.vehicleRegNo;
+      return await BusService.getAllBuses(userId, res, vehicleRegNo);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -21,19 +22,7 @@ class BusController {
 
   static async getBusById(req, res) {
     try {
-      const userId = req.user.sub;
       return await BusService.getBusById(req.params.busId, res);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-
-  static async getBusByVehicleRegNo(req, res) {
-    try {
-      return await BusService.getBusByVehicleRegNo(
-        req.params.vehicleRegNo,
-        res
-      );
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

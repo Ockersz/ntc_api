@@ -62,11 +62,12 @@ const Bus = sequelize.define(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM("1", "0"), // 1 = Active, 0 = Inactive
+      type: DataTypes.ENUM("1", "0"),
+      allowNull: false,
       defaultValue: "1",
     },
     busTypeId: {
-      type: DataTypes.INTEGER, // 1: Active, 0: Cancelled, 2: Maintenance
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: "BusType",
