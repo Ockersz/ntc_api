@@ -5,9 +5,13 @@ const bookingRoutes = require("./src/bookings/bookings.routes");
 const reservationRoutes = require("./src/reservations/reservation.routes");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
+const { pollMessagesFromSQS } = require("./src/reservations/reservationQueue");
+require("dotenv").config();
 
 const app = express();
-app.use((req, res, next) => {
+const port = process.env.PORT || 3002;
+
+const corsMiddleware = (req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header(
@@ -15,9 +19,9 @@ app.use((req, res, next) => {
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   next();
-});
-const port = 3002;
+};
 
+app.use(corsMiddleware);
 app.use(express.json());
 app.use(authMiddleware);
 app.use("/bookings", bookingRoutes);
@@ -125,24 +129,27 @@ const options = {
             seatCount: 3,
           },
         },
-      }, // Ensure this is defined
+      },
     },
   },
-  apis: ["./src/**/*.js"], // Adjust the path to your API files
+  apis: ["./src/**/*.js"],
 };
 
 const swaggerDocs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Server is running on http://localhost:${port}`);
-  //connect to database
-  sequelize
-    .authenticate()
-    .then(() => {
-      console.log("Connection has been established successfully.");
-    })
-    .catch((err) => {
-      console.error("Unable to connect to the database:", err);
-    });
+  try {
+    await sequelize.authenticate();
+    console.log("Connection has been established successfully.");
+  } catch (err) {
+    console.error("Unable to connect to the database:", err);
+    try {
+      await sequelize.authenticate();
+      console.log("Connection retry has been established successfully.");
+    } catch (retryErr) {
+      console.error("Retry failed to connect to the database:", retryErr);
+    }
+  }
 });
