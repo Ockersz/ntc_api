@@ -4,17 +4,15 @@ const RouteCityService = require("./route_city.service");
 class RouteController {
   static async createRoute(req, res) {
     try {
-      const route = await RouteService.createRoute(req.body);
-      res.status(201).json(route);
+      return await RouteService.createRoute(req.body, res);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
   static async getAllRoutes(req, res) {
     try {
-      const routes = await RouteService.getAllRoutes();
-      res.status(200).json(routes);
+      return await RouteService.getAllRoutes(res);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -22,9 +20,7 @@ class RouteController {
 
   static async getRouteById(req, res) {
     try {
-      const route = await RouteService.getRouteById(req.params.routeId);
-      if (!route) return res.status(404).json({ message: "Route not found" });
-      res.status(200).json(route);
+      return await RouteService.getRouteById(req.params.routeId, res);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -32,32 +28,26 @@ class RouteController {
 
   static async updateRoute(req, res) {
     try {
-      const updatedRoute = await RouteService.updateRoute(
-        req.params.routeId,
-        req.body
-      );
-      res.status(200).json(updatedRoute);
+      return await RouteService.updateRoute(req.params.routeId, req.body, res);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
   static async deleteRoute(req, res) {
     try {
-      await RouteService.deleteRoute(req.params.routeId);
-      res.status(200).json({ message: "Route deleted successfully" });
+      return await RouteService.deleteRoute(req.params.routeId, res);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
   static async assignCityToRoute(req, res) {
     try {
       const data = { ...req.body, routeId: req.params.routeId };
-      const routeCity = await RouteCityService.assignCityToRoute(data);
-      res.status(201).json(routeCity);
+      return await RouteCityService.assignCityToRoute(data, res);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
@@ -65,7 +55,8 @@ class RouteController {
   static async getRouteCities(req, res) {
     try {
       const routeCities = await RouteCityService.getRouteCities(
-        req.params.routeId
+        req.params.routeId,
+        res
       );
       res.status(200).json(routeCities);
     } catch (error) {
@@ -76,29 +67,33 @@ class RouteController {
   // Update the sequence order of a city in a route
   static async updateCitySequence(req, res) {
     try {
-      const updatedRouteCity = await RouteCityService.updateSequence(
-        req.params.routeCityId,
-        req.body.sequenceOrder
+      return await RouteCityService.updateSequence(
+        req.params.cityId,
+        req.params.routeId,
+        req.body,
+        res
       );
-      res.status(200).json(updatedRouteCity);
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
   // Remove a city from a route
   static async removeCityFromRoute(req, res) {
     try {
-      await RouteCityService.deleteRouteCity(req.params.routeCityId);
-      res.status(200).json({ message: "City removed from route successfully" });
+      return await RouteCityService.deleteRouteCity(
+        req.params.cityId,
+        req.params.routeId,
+        res
+      );
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
   }
 
   static async getRouteBuses(req, res) {
     try {
-      const buses = await RouteService.getRouteBuses(req.params.routeId);
+      const buses = await RouteService.getRouteBuses(req.params.routeId, res);
       res.status(200).json(buses);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -107,10 +102,10 @@ class RouteController {
 
   static async getRouteScheduleTemplates(req, res) {
     try {
-      const scheduleTemplates = await RouteService.getRouteScheduleTemplates(
-        req.params.routeId
+      return await RouteService.getRouteScheduleTemplates(
+        req.params.routeId,
+        res
       );
-      res.status(200).json(scheduleTemplates);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -121,12 +116,12 @@ class RouteController {
       const fromDate = req.query.fromDate;
       const toDate = req.query.toDate;
 
-      const schedules = await RouteService.getRouteSchedules(
+      return await RouteService.getRouteSchedules(
         req.params.routeId,
         fromDate,
-        toDate
+        toDate,
+        res
       );
-      res.status(200).json(schedules);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
