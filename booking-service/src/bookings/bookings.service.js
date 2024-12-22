@@ -5,17 +5,27 @@ require("dotenv").config();
 const sendEmailToQueue = require("./emailQueue");
 
 class BookingService {
-  static async getAllBookings(nic) {
-    return await Bookings.findAll({
+  static async getAllBookings(nic, res) {
+    if (!nic) {
+      return res.status(400).json({ error: "NIC is required" });
+    }
+
+    const bookings = await Bookings.findAll({
       where: { nicNo: nic },
     });
+
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ error: "No bookings found" });
+    }
+
+    return res.status(200).json(bookings);
   }
 
-  static async createBooking(booking, token) {
+  static async createBooking(booking, token, res) {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
     if (!payload || !payload.reservationId) {
-      throw new Error("Invalid reservation token");
+      return res.status(400).json({ error: "Invalid Reservation token" });
     }
 
     // Validate seat count
@@ -23,7 +33,9 @@ class BookingService {
       booking.seatCount <= 0 ||
       booking.seatCount > Number(process.env.MAX_RESERVATION_PER_USER)
     ) {
-      throw new Error("Invalid seat count");
+      return res.status(400).json({
+        error: `Seat count should be between 1 and ${process.env.MAX_RESERVATION_PER_USER}`,
+      });
     }
     booking.reservationId = payload.reservationId;
     booking.ticketPrice = payload.ticketPrice;
@@ -31,11 +43,13 @@ class BookingService {
     const reservation = await Reservation.findByPk(payload.reservationId);
 
     if (!reservation) {
-      throw new Error("Invalid reservation ID");
+      return res.status(404).json({ error: "Reservation not found" });
     }
 
     if (reservation.status !== "H") {
-      throw new Error("Reservation is not in the hold status");
+      return res
+        .status(400)
+        .json({ error: "Reservation already booked or does not exist" });
     }
 
     const transaction = await Bookings.sequelize.transaction();
@@ -53,7 +67,7 @@ class BookingService {
       return newBooking;
     } catch (error) {
       await transaction.rollback();
-      throw error;
+      res.status(500).json({ error: error.message });
     }
   }
 

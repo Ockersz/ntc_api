@@ -4,8 +4,7 @@ class BookingController {
   static async getAllBookings(req, res) {
     try {
       const nic = req.params.nic;
-      const bookings = await BookingService.getAllBookings(nic);
-      res.status(200).json(bookings);
+      return await BookingService.getAllBookings(nic, res);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -15,8 +14,7 @@ class BookingController {
     try {
       const booking = req.body;
       const token = req.headers.reservation_token;
-      const response = await BookingService.createBooking(booking, token);
-      res.status(201).json(response);
+      return await BookingService.createBooking(booking, token, res);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
