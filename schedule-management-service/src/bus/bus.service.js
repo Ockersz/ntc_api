@@ -33,14 +33,53 @@ class BusService {
     }
   }
 
-  static async getAllBuses() {
-    return await Bus.findAll({
+  static async getAllBuses(userId, res) {
+    if (userId === undefined || userId === null) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const busses = await Bus.findAll({
       include: [
         {
           model: BusType,
         },
       ],
+      attributes: [
+        "busId",
+        "permitId",
+        "vehicleRegNo",
+        "status",
+        "seatCount",
+        "routeId",
+        "busTypeId",
+      ],
+      where: {
+        operatorId: userId,
+      },
     });
+
+    if (busses.length === 0) {
+      const bussesWithNoOperator = await Bus.findAll({
+        include: [
+          {
+            model: BusType,
+          },
+        ],
+        attributes: [
+          "busId",
+          "permitId",
+          "vehicleRegNo",
+          "status",
+          "seatCount",
+          "routeId",
+          "busTypeId",
+        ],
+      });
+
+      return res.status(200).json(bussesWithNoOperator);
+    }
+
+    return res.status(200).json(busses);
   }
 
   static async getBusById(busId, res) {
@@ -73,7 +112,7 @@ class BusService {
     return res.status(200).json(bus);
   }
 
-  static async updateBus(busId, updateData, res) {
+  static async updateBus(busId, updateData, res, userId) {
     if (!busId) {
       return res.status(400).json({ message: "Bus ID is required" });
     }
@@ -91,6 +130,16 @@ class BusService {
 
     if (!bus) {
       return res.status(404).json({ message: "Bus not found" });
+    }
+
+    if (userId === undefined || userId === null) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (bus.operatorId !== userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: You are not the owner of this bus" });
     }
 
     const busExists = await Bus.findOne({
@@ -112,7 +161,15 @@ class BusService {
         .json({ message: "Seat count must be between 0 and 100" });
     }
 
-    const updated = await bus.update(updateData);
+    const busData = {
+      permitId: updateData.permitId || bus.permitId,
+      vehicleRegNo: updateData.vehicleRegNo || bus.vehicleRegNo,
+      busTypeId: updateData.busTypeId || bus.busTypeId,
+      seatCount: updateData.seatCount || bus.seatCount,
+      routeId: updateData.routeId || bus.routeId,
+    };
+
+    const updated = await bus.update(busData, { where: { busId } });
 
     return res.status(200).json({
       message: "Bus updated successfully",
