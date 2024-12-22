@@ -1,10 +1,9 @@
 const AWS = require("aws-sdk");
 require("dotenv").config();
 // Configure the AWS SDK
-
 AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Or your hardcoded key
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // Or your hardcoded secret
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
 });
 
@@ -36,7 +35,6 @@ async function pollMessagesFromSQS() {
     if (data.Messages && data.Messages.length > 0) {
       for (const message of data.Messages) {
         // Process the message
-
         const reservation = JSON.parse(message.Body);
         await ReservationService.validateReservation(reservation);
 
@@ -51,13 +49,14 @@ async function pollMessagesFromSQS() {
     }
   } catch (error) {
     console.error("Error receiving messages from SQS:", error.message);
+  } finally {
+    // Continue polling
+    pollMessagesFromSQS();
   }
-
-  // Continue polling
-  pollMessagesFromSQS();
 }
 
 // Start polling
+console.log("Started polling messages from SQS");
 pollMessagesFromSQS();
 
 module.exports = { sendMessageToSQS, pollMessagesFromSQS };
