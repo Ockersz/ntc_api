@@ -1,6 +1,13 @@
 import { Box, Button, TextField, Typography } from "@mui/material";
 import axios from "axios";
 import React, { useLayoutEffect, useState } from "react";
+import {
+  JsonView,
+  allExpanded,
+  darkStyles,
+  defaultStyles,
+} from "react-json-view-lite";
+import "react-json-view-lite/dist/index.css";
 
 const DynamicEndpoint = ({ theme, endpointInput }) => {
   const [endpoints, setEndpoints] = useState([
@@ -332,10 +339,24 @@ const DynamicEndpoint = ({ theme, endpointInput }) => {
                   <Typography variant="body1" sx={{ mb: 2 }}>
                     <strong>Response Code:</strong> {endpoint.response.status}
                   </Typography>
-                  <Typography variant="body1">
+                  {/* <Typography variant="body1">
                     <strong>Response Data:</strong>{" "}
                     {JSON.stringify(endpoint.response.data)}
-                  </Typography>
+                  </Typography> */}
+                  {theme.palette.mode === "dark" ? (
+                    <JsonView
+                      data={JSON.parse(JSON.stringify(endpoint.response.data))}
+                      shouldExpandNode={allExpanded}
+                      style={darkStyles}
+                    />
+                  ) : (
+                    <JsonView
+                      data={JSON.parse(JSON.stringify(endpoint.response.data))}
+                      shouldExpandNode={allExpanded}
+                      clickToExpandNode={true}
+                      style={defaultStyles}
+                    />
+                  )}
                 </Box>
               )}
             </Box>
