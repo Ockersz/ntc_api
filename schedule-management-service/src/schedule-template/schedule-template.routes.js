@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const scheduleTemplateController = require("./schedule-template.controller");
+const ScheduleTemplateController = require("./schedule-template.controller");
 
 /**
  * @swagger
@@ -35,7 +35,7 @@ const scheduleTemplateController = require("./schedule-template.controller");
  *       400:
  *         description: Invalid input
  */
-router.post("/", scheduleTemplateController.createScheduleTemplate);
+router.post("/", ScheduleTemplateController.createScheduleTemplate);
 
 /**
  * @swagger
@@ -70,7 +70,7 @@ router.post("/", scheduleTemplateController.createScheduleTemplate);
  *       404:
  *         description: Schedule template not found
  */
-router.put("/:templateId", scheduleTemplateController.updateScheduleTemplate);
+router.put("/:templateId", ScheduleTemplateController.updateScheduleTemplate);
 
 /**
  * @swagger
@@ -94,7 +94,7 @@ router.put("/:templateId", scheduleTemplateController.updateScheduleTemplate);
  */
 router.delete(
   "/:templateId",
-  scheduleTemplateController.deleteScheduleTemplate
+  ScheduleTemplateController.deleteScheduleTemplate
 );
 
 /**
@@ -117,7 +117,7 @@ router.delete(
  *       404:
  *         description: Schedule template not found
  */
-router.get("/:templateId", scheduleTemplateController.getScheduleTemplate);
+router.get("/:templateId", ScheduleTemplateController.getScheduleTemplate);
 
 /**
  * @swagger
@@ -130,6 +130,6 @@ router.get("/:templateId", scheduleTemplateController.getScheduleTemplate);
  *       200:
  *         description: List of schedule templates retrieved successfully
  */
-router.get("/", scheduleTemplateController.getAllScheduleTemplates);
+router.get("/", ScheduleTemplateController.getAllScheduleTemplates);
 
 module.exports = router;
