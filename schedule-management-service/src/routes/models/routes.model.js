@@ -11,8 +11,6 @@ const sequelize = require("../../config/database"); // Replace with your DB conn
  *        - routeName
  *        - estimatedTime
  *        - distance
- *        - cityId
- *        - name
  *      properties:
  *         routeId:
  *          type: integer

@@ -12,6 +12,7 @@ const scheduleRoutes = require("./src/schedules/schedule.routes");
 const authMiddleware = require("./middleware/auth");
 
 const app = express();
+app.use(cors());
 const port = 3001;
 
 const options = {
@@ -32,6 +33,7 @@ const swaggerDocs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(express.json());
 app.use(authMiddleware);
+
 app.use("/buses", busRoutes);
 app.use("/cities", cityRoutes);
 app.use("/routes", routeRoutes);
@@ -40,7 +42,7 @@ app.use("/schedules", scheduleRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-  //connect to database
+  // Connect to database
   sequelize
     .authenticate()
     .then(() => {

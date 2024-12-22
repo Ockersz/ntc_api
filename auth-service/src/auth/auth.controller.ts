@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -51,6 +52,11 @@ export class AuthController {
       refreshToken,
       firstLogin,
     };
+  }
+
+  @Get()
+  getHello(): string {
+    return 'Hello World!';
   }
 
   @UseGuards(AuthGuard)

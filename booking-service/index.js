@@ -23,6 +23,7 @@ app.use(authMiddleware);
 app.use("/bookings", bookingRoutes);
 app.use("/reservations", reservationRoutes);
 
+
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -39,6 +40,7 @@ const options = {
 
 const swaggerDocs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
