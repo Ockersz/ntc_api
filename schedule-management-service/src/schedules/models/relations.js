@@ -1,6 +1,8 @@
 const Schedule = require("./schedule.model");
 const Route = require("../../routes/models/routes.model");
 const Bus = require("../../bus/models/bus.model");
+const RouteCity = require("../../routes/models/route_city.model");
+const BusType = require("../../bus-type/models/bus-type.model");
 
 Schedule.belongsTo(Route, {
   foreignKey: "routeId",
@@ -20,4 +22,16 @@ Bus.hasMany(Schedule, {
   onDelete: "CASCADE",
 });
 
-module.exports = { Schedule, Route, Bus };
+// Route has many RouteCity
+Route.hasMany(RouteCity, { foreignKey: "routeId", as: "routeCities" });
+RouteCity.belongsTo(Route, { foreignKey: "routeId" });
+
+Bus.belongsTo(BusType, {
+  foreignKey: "busTypeId",
+});
+
+BusType.hasMany(Bus, {
+  foreignKey: "busTypeId",
+});
+
+module.exports = { Schedule, Route, Bus, RouteCity };

@@ -3,7 +3,8 @@ const BusService = require("./bus.service");
 class BusController {
   static async createBus(req, res) {
     try {
-      const bus = await BusService.createBus(req.body);
+      const userId = req.user.sub;
+      const bus = await BusService.createBus(req.body, userId);
       res.status(201).json(bus);
     } catch (error) {
       res.status(400).json({ message: error.message });
