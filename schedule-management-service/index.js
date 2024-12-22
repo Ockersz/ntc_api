@@ -1,7 +1,8 @@
-const express = require("express"),
-  bodyParser = require("body-parser"),
-  swaggerJsdoc = require("swagger-jsdoc"),
-  swaggerUi = require("swagger-ui-express");
+const express = require("express");
+const cors = require("cors");
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+
 const busRoutes = require("./src/bus/bus.routes");
 const sequelize = require("./src/config/database");
 const cityRoutes = require("./src/city/city.routes");
