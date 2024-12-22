@@ -2,6 +2,7 @@ const RouteCity = require("./route_city.model");
 const Route = require("./routes.model");
 const ScheduleTemplate = require("../../schedule-template/models/schedule-template.model");
 const Schedule = require("../../schedules/models/schedule.model");
+const City = require("../../city/models/city.model");
 
 Route.hasMany(RouteCity, {
   foreignKey: "routeId",
@@ -30,4 +31,12 @@ Schedule.belongsTo(Route, {
   foreignKey: "routeId",
 });
 
-module.exports = { Route, RouteCity };
+RouteCity.belongsTo(City, {
+  foreignKey: "cityId",
+});
+
+City.hasMany(RouteCity, {
+  foreignKey: "cityId",
+});
+
+module.exports = { Route, RouteCity, City };
