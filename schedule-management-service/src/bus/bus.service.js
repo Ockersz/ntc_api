@@ -82,8 +82,7 @@ class BusService {
       !updateData.vehicleRegNo ||
       !updateData.busTypeId ||
       !updateData.seatCount ||
-      !updateData.routeId ||
-      !updateData.status
+      !updateData.routeId
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
