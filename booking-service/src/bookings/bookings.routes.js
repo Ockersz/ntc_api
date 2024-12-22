@@ -5,10 +5,18 @@ const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   - name: Booking
+ *     description: API for managing bookings in the system
+ */
+
+/**
+ * @swagger
  * /bookings/{nic}:
  *   get:
  *     summary: Get all bookings of a user
  *     description: Retrieve all bookings associated with a user's NIC
+ *     tags: [Booking]
  *     parameters:
  *       - in: path
  *         name: nic
@@ -37,6 +45,7 @@ const router = express.Router();
  *   post:
  *     summary: Create a new booking
  *     description: Create a new booking for a user
+ *     tags: [Booking]
  *     requestBody:
  *       required: true
  *       content:

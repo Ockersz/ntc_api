@@ -1,8 +1,19 @@
+const express = require("express");
+const ReservationController = require("./reservation.controller");
+
 /**
  * @swagger
- * /available-seats:
+ * tags:
+ *   - name: Reservation
+ *     description: API for managing reservations in the system
+ */
+
+/**
+ * @swagger
+ * reservations/available-seats:
  *   get:
  *     summary: Calculate available seats
+ *     tags: [Reservation]
  *     description: Retrieve the number of available seats for a specific schedule.
  *     responses:
  *       200:
@@ -18,9 +29,10 @@
  *       500:
  *         description: Internal server error
  *
- * /:
+ * reservations/:
  *   post:
  *     summary: Create a new reservation
+ *     tags: [Reservation]
  *     description: Create a new reservation with the provided details.
  *     requestBody:
  *       required: true
@@ -72,8 +84,6 @@
  *       500:
  *         description: Internal server error
  */
-const express = require("express");
-const ReservationController = require("./reservation.controller");
 
 const router = express.Router();
 
