@@ -20,4 +20,4 @@ ScheduleTemplateDetail.belongsTo(Bus, {
   foreignKey: "busId",
 });
 
-module.exports = { ScheduleTemplate, ScheduleTemplateDetail };
+module.exports = { ScheduleTemplate, ScheduleTemplateDetail, Route, Bus };
