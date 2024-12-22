@@ -6,7 +6,10 @@ class CityService {
       return res.status(400).json({ message: "City name is required" });
     }
 
-    const exsist = await City.findOne({ where: { name: cityData.name } });
+    const exsist = await City.findOne({
+      where: { name: cityData.name },
+      attributes: ["name", "cityId"],
+    });
 
     if (exsist) {
       return res.status(400).json({ message: "City already exsist" });
@@ -24,7 +27,9 @@ class CityService {
   }
 
   static async getAllCities() {
-    return await City.findAll();
+    return await City.findAll({
+      attributes: ["name", "cityId"],
+    });
   }
 
   static async getCityById(cityId, res) {
@@ -32,7 +37,9 @@ class CityService {
       return res.status(400).json({ message: "City ID is required" });
     }
 
-    const city = await City.findByPk(cityId);
+    const city = await City.findByPk(cityId, {
+      attributes: ["name", "cityId"],
+    });
 
     if (!city) {
       return res.status(404).json({ message: "City not found" });
@@ -58,7 +65,11 @@ class CityService {
       return res.status(400).json({ message: "City name already exsist" });
     }
 
-    const cityUpdated = await City.update(updateData, {
+    const cityData = {
+      name: updateData.name,
+    };
+
+    const cityUpdated = await City.update(cityData, {
       where: { id: cityId },
     });
 
