@@ -1,6 +1,62 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
 
+/**
+ * @swagger
+ * definition:
+ *   Bookings:
+ *     type: object
+ *     properties:
+ *       bookingId:
+ *         type: integer
+ *         description: The auto-generated id of the booking
+ *       scheduleId:
+ *         type: integer
+ *         description: The id of the schedule
+ *       nicNo:
+ *         type: string
+ *         description: The NIC number of the user
+ *       name:
+ *         type: string
+ *         description: The name of the user
+ *       phoneNumber:
+ *         type: string
+ *         description: The phone number of the user
+ *       email:
+ *         type: string
+ *         description: The email of the user
+ *       seatCount:
+ *         type: integer
+ *         description: The number of seats booked
+ *       totalAmount:
+ *         type: number
+ *         description: The total amount of the booking
+ *       status:
+ *         type: char
+ *         description: The status of the booking
+ *       prefferedNotificationType:
+ *         type: string
+ *         description: The preferred notification type
+ *     required:
+ *       - scheduleId
+ *       - nicNo
+ *       - name
+ *       - email
+ *       - seatCount
+ *       - status
+ *       - prefferedNotificationType
+ *     example:
+ *       scheduleId: 1
+ *       nicNo: "123456789V"
+ *       name: "John Doe"
+ *       phoneNumber: "0771234567"
+ *       email: "user@example.com"
+ *       seatCount: 2
+ *       totalAmount: 2000.00
+ *       status: "B"
+ *       prefferedNotificationType: "Email"
+ */
+
 const Bookings = sequelize.define(
   "Bookings",
   {

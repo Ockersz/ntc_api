@@ -31,6 +31,11 @@ const City = sequelize.define(
       unique: true,
       allowNull: false,
     },
+    status: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
   },
   {
     tableName: "city",

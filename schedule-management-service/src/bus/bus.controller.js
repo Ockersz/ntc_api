@@ -4,8 +4,7 @@ class BusController {
   static async createBus(req, res) {
     try {
       const userId = req.user.sub;
-      const bus = await BusService.createBus(req.body, userId);
-      res.status(201).json(bus);
+      return await BusService.createBus(req.body, userId, res);
     } catch (error) {
       res.status(400).json({ message: error.message });
     }
@@ -13,8 +12,9 @@ class BusController {
 
   static async getAllBuses(req, res) {
     try {
-      const buses = await BusService.getAllBuses();
-      res.status(200).json(buses);
+      const userId = req.user.sub;
+      const vehicleRegNo = req.query.vehicleRegNo;
+      return await BusService.getAllBuses(userId, res, vehicleRegNo);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -22,21 +22,7 @@ class BusController {
 
   static async getBusById(req, res) {
     try {
-      const bus = await BusService.getBusById(req.params.busId);
-      if (!bus) return res.status(404).json({ message: "Bus not found" });
-      res.status(200).json(bus);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
-
-  static async getBusByVehicleRegNo(req, res) {
-    try {
-      const bus = await BusService.getBusByVehicleRegNo(
-        req.params.vehicleRegNo
-      );
-      if (!bus) return res.status(404).json({ message: "Bus not found" });
-      res.status(200).json(bus);
+      return await BusService.getBusById(req.params.busId, res);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -44,8 +30,13 @@ class BusController {
 
   static async updateBus(req, res) {
     try {
-      const updatedBus = await BusService.updateBus(req.params.busId, req.body);
-      res.status(200).json(updatedBus);
+      const userId = req.user.sub;
+      return await BusService.updateBus(
+        req.params.busId,
+        req.body,
+        res,
+        userId
+      );
     } catch (error) {
       res.status(400).json({ message: error.message });
     }
@@ -53,8 +44,8 @@ class BusController {
 
   static async deleteBus(req, res) {
     try {
-      await BusService.deleteBus(req.params.busId);
-      res.status(200).json({ message: "Bus deleted successfully" });
+      const userId = req.user.sub;
+      return await BusService.deleteBus(req.params.busId, res, userId);
     } catch (error) {
       res.status(400).json({ message: error.message });
     }

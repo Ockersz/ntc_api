@@ -185,11 +185,8 @@ router.delete("/:routeId", RouteController.deleteRoute);
 // Nested route for cities
 router.post("/:routeId/cities", RouteController.assignCityToRoute);
 router.get("/:routeId/cities", RouteController.getRouteCities);
-router.put("/:routeId/cities/:routeCityId", RouteController.updateCitySequence);
-router.delete(
-  "/:routeId/cities/:routeCityId",
-  RouteController.removeCityFromRoute
-);
+router.put("/:routeId/cities/:cityId", RouteController.updateCitySequence);
+router.delete("/:routeId/cities/:cityId", RouteController.removeCityFromRoute);
 
 // Nested route for buses
 router.get("/:routeId/buses", RouteController.getRouteBuses);

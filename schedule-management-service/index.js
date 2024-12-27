@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
@@ -43,13 +42,20 @@ app.use("/schedules", scheduleRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-  // Connect to database
-  sequelize
-    .authenticate()
-    .then(() => {
-      console.log("Connection has been established successfully.");
-    })
-    .catch((err) => {
-      console.error("Unable to connect to the database:", err);
-    });
+
+  const connectWithRetry = () => {
+    sequelize
+      .authenticate()
+      .then(() => {
+        console.log("Connection has been established successfully.");
+      })
+      .catch((err) => {
+        console.error("Unable to connect to the database:", err);
+        console.log("Retrying in 5 seconds...");
+        setTimeout(connectWithRetry, 5000);
+      });
+  };
+
+  // Initial attempt to connect to the database
+  connectWithRetry();
 });

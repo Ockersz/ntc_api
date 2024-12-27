@@ -4,13 +4,13 @@ class ScheduleController {
   async getAllSchedules(req, res) {
     try {
       const { fromCity, toCity, fromDate, toDate } = req.query;
-      const schedules = await ScheduleService.getAllSchedules(
+      return await ScheduleService.getAllSchedules(
         fromCity,
         toCity,
         fromDate,
-        toDate
+        toDate,
+        res
       );
-      res.status(200).json(schedules);
     } catch (error) {
       res.status(500).json({ message: "Error fetching schedules", error });
     }
@@ -19,11 +19,7 @@ class ScheduleController {
   async getScheduleById(req, res) {
     try {
       const { id } = req.params;
-      const schedule = await ScheduleService.getScheduleById(id);
-      if (!schedule) {
-        return res.status(404).json({ message: "Schedule not found" });
-      }
-      res.status(200).json(schedule);
+      return await ScheduleService.getScheduleById(id);
     } catch (error) {
       res.status(500).json({ message: "Error fetching schedule", error });
     }

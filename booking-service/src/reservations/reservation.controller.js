@@ -4,8 +4,7 @@ class ReservationController {
   static async createReservation(req, res) {
     try {
       const reservation = req.body;
-      const response = await ReservationService.createReservation(reservation);
-      res.status(201).json(response);
+      return await ReservationService.createReservation(reservation, res);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -15,7 +14,8 @@ class ReservationController {
     try {
       const { scheduleId } = req.query;
       const availableSeats = await ReservationService.calculateAvailableSeats(
-        scheduleId
+        scheduleId,
+        res
       );
       res.status(200).json({ availableSeats });
     } catch (error) {
