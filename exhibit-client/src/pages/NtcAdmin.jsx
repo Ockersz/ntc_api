@@ -74,7 +74,7 @@ const endpoints = [
     description: "Get a route by ID from the database",
     url: "https://www.ockersz.me/routes/:id",
     method: "GET",
-    inputs: [{ name: "id", defaultVal: "1" }],
+    inputs: [{ name: "id", defaultVal: "1", type: "param" }],
   },
   {
     title: "Update Route",
@@ -111,7 +111,7 @@ const endpoints = [
     description: "Get all cities for a route by ID from the database",
     url: "https://www.ockersz.me/routes/:id/cities",
     method: "GET",
-    inputs: [{ name: "id", defaultVal: "1" }],
+    inputs: [{ name: "id", defaultVal: "1", type: "param" }],
   },
   {
     title: "Update City In Route",
