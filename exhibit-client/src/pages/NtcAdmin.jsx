@@ -223,7 +223,7 @@ const endpoints = [
   {
     title: "Get All Schedule-Templates",
     description: "Get all schedule-templates from the database",
-    url: "https://www.ockersz.me/schedule-templates",
+    url: "https://www.ockersz.me/schedule-template",
     method: "GET",
     inputs: [],
   },
@@ -244,21 +244,21 @@ const endpoints = [
   {
     title: "Get Schedule By ID",
     description: "Get a schedule by ID from the database",
-    url: "https://www.ockersz.me/schedule/:id",
+    url: "https://www.ockersz.me/schedules/:id",
     method: "GET",
     inputs: [{ name: "id", defaultVal: "1", type: "param" }],
   },
   {
     title: "Get available seats",
     description: "Get available seats for a schedule by ID from the database",
-    url: "https://www.ockersz.me/schedule/:id/seats",
+    url: "https://www.ockersz.me/schedules/:id/seats",
     method: "GET",
     inputs: [{ name: "id", defaultVal: "1", type: "param" }],
   },
   {
     title: "Generate Schedule",
     description: "Generate a schedule for a route by ID in the database",
-    url: "https://www.ockersz.me/schedule",
+    url: "https://www.ockersz.me/schedules",
     method: "POST",
     inputs: [
       { name: "routeId", defaultVal: "1", type: "body" },
