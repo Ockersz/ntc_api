@@ -11,6 +11,7 @@ const sequelize = require("../../config/database");
  *        - routeId
  *        - busId
  *        - templateId
+ *        - direction
  *        - startTime
  *        - endTime
  *        - status
@@ -29,6 +30,9 @@ const sequelize = require("../../config/database");
  *        templateId:
  *          type: integer
  *          description: The template identifier for the schedule
+ *        direction:
+ *          type: string
+ *          description: The direction of the scheduled route
  *        startTime:
  *          type: string
  *          description: The start time of the schedule
@@ -77,6 +81,10 @@ const Schedule = sequelize.define(
         model: "ScheduleTemplates",
         key: "id",
       },
+    },
+    direction: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     startTime: {
       type: DataTypes.DATE,
