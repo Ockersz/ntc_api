@@ -19,36 +19,21 @@ class ScheduleController {
   async getScheduleById(req, res) {
     try {
       const { id } = req.params;
-      return await ScheduleService.getScheduleById(id);
+      return await ScheduleService.getScheduleById(id, res);
     } catch (error) {
       res.status(500).json({ message: "Error fetching schedule", error });
-    }
-  }
-
-  async getSeatAvailability(req, res) {
-    try {
-      const { id } = req.params;
-      const availability = await ScheduleService.getSeatAvailability(id);
-      if (!availability) {
-        return res.status(404).json({ message: "Schedule not found" });
-      }
-      res.status(200).json(availability);
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error fetching seat availability", error });
     }
   }
 
   async createSchedules(req, res) {
     try {
       const { routeId, dateRange, templateIds } = req.body;
-      const result = await ScheduleService.processSchedule(
+      return await ScheduleService.processSchedule(
         routeId,
         dateRange,
-        templateIds
+        templateIds,
+        res
       );
-      res.status(201).json(result);
     } catch (error) {
       console.log(error);
       res.status(400).json({ message: "Error processing schedules", error });
@@ -71,8 +56,7 @@ class ScheduleController {
   async getSeatsAvailable(req, res) {
     try {
       const { id } = req.params;
-      const availableSeats = await ScheduleService.getSeatAvailability(id);
-      res.status(200).json({ availableSeats });
+      return await ScheduleService.getSeatAvailability(id, res);
     } catch (error) {
       res
         .status(500)

@@ -52,7 +52,7 @@ const endpoints = [
     description: "Get a bus by ID from the database",
     url: "https://www.ockersz.me/buses/:id",
     method: "GET",
-    inputs: [{ name: "id", defaultVal: "1" }],
+    inputs: [{ name: "id", defaultVal: "1", type: "param" }],
   },
   {
     title: "Update Bus",
@@ -80,7 +80,7 @@ const endpoints = [
     description: "Get a bus by vehicleRegNo from the database",
     url: "https://www.ockersz.me/buses/vehicle/:vehicleRegNo",
     method: "GET",
-    inputs: [{ name: "vehicleRegNo", defaultVal: "NC-1234" }],
+    inputs: [{ name: "vehicleRegNo", defaultVal: "NC-1234", type: "param" }],
   },
 ];
 
