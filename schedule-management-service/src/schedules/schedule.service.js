@@ -3,6 +3,7 @@ const {
   Bus,
   Route,
   ScheduleTemplate,
+  ScheduleTemplateDetails,
   City,
   RouteCity,
 } = require("./models/relations");
@@ -145,7 +146,7 @@ class ScheduleService {
     return res.status(200).json(schedule);
   }
 
-  async processSchedule(routeId, dateRange, templateIds) {
+  async processSchedule(routeId, dateRange, templateIds, res) {
     const [startDate, endDate] = dateRange;
 
     // Validation: Ensure the date range is valid
@@ -154,17 +155,17 @@ class ScheduleService {
       !moment(endDate).isValid() ||
       moment(startDate).isAfter(endDate)
     ) {
-      throw new Error("Invalid date range provided.");
+      return res.status(400).json({ message: "Invalid date range." });
     }
 
     // Fetch the selected templates and their details
     const templates = await ScheduleTemplate.findAll({
       where: { routeId, templateId: templateIds },
-      include: [{ model: ScheduleTemplateDetail }],
+      include: [{ model: ScheduleTemplateDetails }],
     });
 
     if (templates.length === 0) {
-      throw new Error("No templates found for the selected route and IDs.");
+      return res.status(404).json({ message: "No templates found." });
     }
 
     // Separate templates into outbound and return
@@ -175,8 +176,8 @@ class ScheduleService {
       (template) => template.direction === "return"
     );
     // Validation: Check for conflicting templates in each direction
-    this.validateTemplateConflicts(outboundTemplates, startDate, endDate);
-    this.validateTemplateConflicts(returnTemplates, startDate, endDate);
+    this.validateTemplateConflicts(outboundTemplates, startDate, endDate, res);
+    this.validateTemplateConflicts(returnTemplates, startDate, endDate, res);
 
     // Prepare schedules
     const schedule = [];
@@ -217,7 +218,9 @@ class ScheduleService {
     } catch (error) {
       console.log(error);
       await transaction.rollback();
-      throw new Error("Error processing schedules.");
+      return res
+        .status(500)
+        .json({ message: "Error processing schedules", error });
     }
   }
 
@@ -225,9 +228,9 @@ class ScheduleService {
     return await Schedule.destroy({ where: { scheduleId } });
   }
 
-  validateTemplateConflicts(templates, startDate, endDate) {
+  validateTemplateConflicts(templates, startDate, endDate, res) {
     if (!Array.isArray(templates)) {
-      throw new Error("Templates must be an array.");
+      return res.status(400).json({ message: "Templates must be an array." });
     }
 
     const busScheduleMap = new Map();
@@ -240,7 +243,9 @@ class ScheduleService {
       );
 
       if (!Array.isArray(template.dataValues.scheduletemplatedetails)) {
-        throw new Error("Template details must be an array.");
+        return res.status(400).json({
+          message: "Template details must be an array.",
+        });
       }
 
       template.dataValues.scheduletemplatedetails.forEach((detail) => {
@@ -265,9 +270,9 @@ class ScheduleService {
                 endTime
               )
             ) {
-              throw new Error(
-                `Conflict detected: Bus ID ${busId} has overlapping schedules on ${date}. Time ranges ${schedule.startTime}-${schedule.endTime} and ${startTime}-${endTime} conflict.`
-              );
+              return res.status(400).json({
+                message: `Conflict detected: Bus ID ${busId} has overlapping schedules on ${date}. Time ranges ${schedule.startTime}-${schedule.endTime} and ${startTime}-${endTime} conflict.`,
+              });
             }
           }
 
@@ -310,7 +315,7 @@ class ScheduleService {
     return dates;
   }
 
-  async getSeatAvailability(scheduleId) {
+  async getSeatAvailability(scheduleId, res) {
     try {
       const token = this.generateServiceToken();
       const response = await axios.get(
@@ -325,7 +330,7 @@ class ScheduleService {
       const schedule = await this.getScheduleById(scheduleId);
 
       if (!schedule) {
-        throw new Error("Schedule not found.");
+        return res.status(404).json({ message: "Schedule not found." });
       }
 
       const busSeats = schedule.Bus.seatCount;
@@ -335,7 +340,9 @@ class ScheduleService {
       }
     } catch (error) {
       console.error("Error fetching schedule details:", error.message);
-      throw new Error("Failed to fetch schedule details");
+      return res
+        .status(500)
+        .json({ message: "Error fetching schedule details." });
     }
   }
 }
