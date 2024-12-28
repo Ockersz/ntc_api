@@ -10,7 +10,11 @@ const { pollMessagesFromSQS } = require("./src/reservations/reservationQueue");
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 const port = process.env.PORT || 3002;
 
 // const corsMiddleware = (req, res, next) => {
