@@ -29,11 +29,11 @@ const options = {
   apis: ["./src/**/*.js"], // Adjust the path to your API files
 };
 
-const swaggerDocs = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(express.json());
 app.use(authMiddleware);
 
+const swaggerDocs = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use("/buses", busRoutes);
 app.use("/cities", cityRoutes);
 app.use("/routes", routeRoutes);
