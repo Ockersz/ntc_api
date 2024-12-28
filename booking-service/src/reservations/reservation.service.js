@@ -122,11 +122,7 @@ class ReservationService {
    * @returns {number} Number of available seats
    * @throws Will throw an error if the fetch fails.
    */
-  static async calculateAvailableSeats(
-    scheduleId,
-    busSeatCount = 0,
-    res = null
-  ) {
+  static async calculateAvailableSeats(scheduleId, busSeatCount, res) {
     try {
       // Fetch all bookings and reservations for the schedule
       const [bookings, reservations] = await Promise.all([
