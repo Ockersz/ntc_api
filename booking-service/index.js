@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const sequelize = require("./src/config/database");
 const authMiddleware = require("./middleware/auth");
 const bookingRoutes = require("./src/bookings/bookings.routes");
@@ -9,19 +10,19 @@ const { pollMessagesFromSQS } = require("./src/reservations/reservationQueue");
 require("dotenv").config();
 
 const app = express();
+app.use(cors());
 const port = process.env.PORT || 3002;
 
-const corsMiddleware = (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  next();
-};
+// const corsMiddleware = (req, res, next) => {
+//   res.header("Access-Control-Allow-Origin", "*");
+//   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+//   res.header(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+//   );
+//   next();
+// };
 
-app.use(corsMiddleware);
 app.use(express.json());
 app.use(authMiddleware);
 app.use("/bookings", bookingRoutes);
