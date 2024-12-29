@@ -160,6 +160,56 @@ class ScheduleService {
     }
   }
 
+  async getScheduleById(scheduleId, res) {
+    try {
+      const schedule = await Schedule.findOne({
+        where: { scheduleId, status: 1 },
+        include: [
+          {
+            model: Bus,
+            include: [
+              {
+                model: BusType,
+                attributes: {
+                  exclude: ["createdAt", "updatedAt"],
+                },
+              },
+            ],
+            attributes: {
+              exclude: [
+                "busTypeId",
+                "createdAt",
+                "updatedAt",
+                "status",
+                "operatorId",
+              ],
+            },
+          },
+          {
+            model: Route,
+            attributes: {
+              exclude: ["createdAt", "updatedAt", "status"],
+            },
+          },
+        ],
+        attributes: {
+          exclude: ["templateId", "createdAt", "updatedAt"],
+        },
+      });
+
+      if (!schedule) {
+        return res.status(404).json({ message: "Schedule not found." });
+      }
+
+      return res.status(200).json(schedule);
+    } catch (error) {
+      console.error("Error fetching schedule details:", error.message);
+      return res
+        .status(500)
+        .json({ message: "Error fetching schedule details." });
+    }
+  }
+
   async processSchedule(routeId, dateRange, templateIds, res) {
     const [startDate, endDate] = dateRange;
 
