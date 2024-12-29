@@ -64,7 +64,7 @@ class BookingService {
 
       await transaction.commit();
       this.sendBookingSuccessEmail(newBooking);
-      return newBooking;
+      return res.status(201).json(newBooking);
     } catch (error) {
       await transaction.rollback();
       res.status(500).json({ error: error.message });
@@ -116,11 +116,13 @@ class BookingService {
                     <ul>
                         <li><strong>Booking Reference ID:</strong> <span class="highlight">${booking.bookingId}</span></li>
                         <li><strong>NIC No:</strong> ${booking.nicNo}</li>
+                        <li><strong>Number of Seats:</strong> ${booking.seatCount}</li>
+                        <li><strong>Total Amount:</strong> LKR ${booking.totalAmount}</li>
                     </ul>
                     <p>Thank you for choosing our service. If you have any questions, feel free to contact us.</p>
                 </div>
                 <div class="footer">
-                    <p>&copy; 2024 Your Company. All rights reserved.</p>
+                    <p>&copy; 2025 NTC. All rights reserved.</p>
                 </div>
             </div>
         </body>

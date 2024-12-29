@@ -12,6 +12,7 @@ const moment = require("moment");
 const sequelize = require("../config/database");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const BusType = require("../bus-type/models/bus-type.model");
 
 class ScheduleService {
@@ -28,122 +29,185 @@ class ScheduleService {
 
     if (fromCity && toCity) {
       const fromCityDetails = await City.findOne({
-        where: { cityName: fromCity },
+        where: { cityId: fromCity },
       });
       if (!fromCityDetails) {
         return res.status(404).json({ message: "From city not found." });
       }
 
       const toCityDetails = await City.findOne({
-        where: { cityName: toCity },
+        where: { cityId: toCity },
       });
 
       if (!toCityDetails) {
         return res.status(404).json({ message: "To city not found." });
       }
 
-      //get routcity details which has both from and to city
-      const routeCities = await RouteCity.findAll({
-        where: {
-          cityId: [fromCityDetails.cityId, toCityDetails.cityId],
-        },
-        group: ["routeId"],
-        having: sequelize.literal("count(routeId) = 2"),
+      // Get route city details which have both from and to city
+      const routeCities = await sequelize.query(
+        `
+        SELECT 
+            r1.routeId, 
+            r1.cityId,
+            r1.sequenceOrder
+        FROM 
+            route_city AS r1
+        WHERE 
+            r1.cityId = :fromCity
+
+        AND r1.routeId IN (
+            SELECT r2.routeId
+            FROM route_city AS r2
+            WHERE r2.cityId = :toCity
+        )
+        UNION ALL
+
+        SELECT 
+            r2.routeId, 
+            r2.cityId,
+            r2.sequenceOrder
+        FROM 
+            route_city AS r2
+        WHERE 
+            r2.cityId = :toCity
+
+        AND r2.routeId IN (
+            SELECT r1.routeId
+            FROM route_city AS r1
+            WHERE r1.cityId = :fromCity
+        );
+        `,
+        {
+          replacements: {
+            fromCity: fromCityDetails.cityId,
+            toCity: toCityDetails.cityId,
+          },
+          type: sequelize.QueryTypes.SELECT,
+        }
+      );
+
+      // Determine the direction based on the sequence order
+      let direction = "outbound";
+      const routeCityMap = {};
+      routeCities.forEach((routeCity) => {
+        routeCityMap[routeCity.cityId] = routeCity.sequenceOrder;
       });
 
-      if (routeCities.length === 0) {
-        return res.status(404).json({ message: "No routes found." });
+      if (
+        routeCityMap[fromCityDetails.cityId] >
+        routeCityMap[toCityDetails.cityId]
+      ) {
+        direction = "return";
       }
 
       whereClause.routeId = routeCities.map((routeCity) => routeCity.routeId);
+      whereClause.direction = direction;
     }
 
     if (fromDate) {
-      whereClause.startTime = { [sequelize.Op.gte]: fromDate };
+      whereClause.startTime = { [Op.gte]: new Date(fromDate) };
     }
     if (toDate) {
-      whereClause.endTime = { [sequelize.Op.lte]: toDate };
+      whereClause.endTime = { [Op.lte]: new Date(toDate) };
     }
 
-    const schedules = await Schedule.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Bus,
-          include: [
-            {
-              model: BusType,
-              attributes: {
-                exclude: ["createdAt", "updatedAt"],
-              },
-            },
-          ],
-          attributes: {
-            exclude: [
-              "busTypeId",
-              "createdAt",
-              "updatedAt",
-              "status",
-              "operatorId",
-            ],
-          },
-        },
-        {
-          model: Route,
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "status"],
-          },
-        },
-      ],
-      attributes: {
-        exclude: ["templateId", "createdAt", "updatedAt"],
-      },
-    });
+    // Log the whereClause to debug
+    console.log("whereClause:", whereClause);
 
-    return res.status(200).json(schedules);
+    try {
+      const schedules = await Schedule.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: Bus,
+            include: [
+              {
+                model: BusType,
+                attributes: {
+                  exclude: ["createdAt", "updatedAt"],
+                },
+              },
+            ],
+            attributes: {
+              exclude: [
+                "busTypeId",
+                "createdAt",
+                "updatedAt",
+                "status",
+                "operatorId",
+              ],
+            },
+          },
+          {
+            model: Route,
+            attributes: {
+              exclude: ["createdAt", "updatedAt", "status"],
+            },
+          },
+        ],
+        attributes: {
+          exclude: ["templateId", "createdAt", "updatedAt"],
+        },
+      });
+
+      return res.status(200).json(schedules);
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+      return res.status(500).json({
+        message: "Error fetching schedules",
+        error: error.message,
+      });
+    }
   }
 
   async getScheduleById(scheduleId, res) {
-    const schedule = await Schedule.findOne({
-      where: { scheduleId },
-      include: [
-        {
-          model: Bus,
-          include: [
-            {
-              model: BusType,
-              attributes: {
-                exclude: ["createdAt", "updatedAt"],
+    try {
+      const schedule = await Schedule.findOne({
+        where: { scheduleId, status: 1 },
+        include: [
+          {
+            model: Bus,
+            include: [
+              {
+                model: BusType,
+                attributes: {
+                  exclude: ["createdAt", "updatedAt"],
+                },
               },
-            },
-          ],
-          attributes: {
-            exclude: [
-              "busTypeId",
-              "createdAt",
-              "updatedAt",
-              "status",
-              "operatorId",
             ],
+            attributes: {
+              exclude: [
+                "busTypeId",
+                "createdAt",
+                "updatedAt",
+                "status",
+                "operatorId",
+              ],
+            },
           },
-        },
-        {
-          model: Route,
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "status"],
+          {
+            model: Route,
+            attributes: {
+              exclude: ["createdAt", "updatedAt", "status"],
+            },
           },
+        ],
+        attributes: {
+          exclude: ["templateId", "createdAt", "updatedAt"],
         },
-      ],
-      attributes: {
-        exclude: ["templateId", "createdAt", "updatedAt"],
-      },
-    });
+      });
 
-    if (!schedule) {
-      return res.status(404).json({ message: "Schedule not found." });
+      if (!schedule) {
+        return res.status(404).json({ message: "Schedule not found." });
+      }
+
+      return res.status(200).json(schedule);
+    } catch (error) {
+      console.error("Error fetching schedule details:", error.message);
+      return res
+        .status(500)
+        .json({ message: "Error fetching schedule details." });
     }
-
-    return res.status(200).json(schedule);
   }
 
   async processSchedule(routeId, dateRange, templateIds, res) {
@@ -195,6 +259,7 @@ class ScheduleService {
             routeId,
             busId: dataVal.busId,
             templateId: template.dataValues.templateId,
+            direction: template.dataValues.direction,
             startTime: `${date}T${dataVal.startTime}`,
             endTime: `${date}T${dataVal.endTime}`,
             status: 1,
@@ -211,10 +276,10 @@ class ScheduleService {
       });
 
       await transaction.commit();
-      return {
+      return res.status(201).json({
         message: "Schedules processed successfully.",
         count: schedule.length,
-      };
+      });
     } catch (error) {
       console.log(error);
       await transaction.rollback();

@@ -13,7 +13,11 @@ class ReservationController {
   static async calculateAvailableSeats(req, res) {
     try {
       const { scheduleId } = req.query;
-      return await ReservationService.calculateAvailableSeats(scheduleId, res);
+      return await ReservationService.calculateAvailableSeats(
+        scheduleId,
+        null,
+        res
+      );
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

@@ -7,7 +7,7 @@ const { sendMessageToSQS } = require("./reservationQueue");
 
 class ReservationService {
   // Base URL for schedule microservice
-  static BASE_URL = process.env.BASE_URL;
+  static BASE_URL = process.env.BOOKING_SERVICE_URL;
 
   // Generate a short-lived token for inter-service communication
   static generateServiceToken() {
@@ -70,19 +70,25 @@ class ReservationService {
       const reserveToken = jwt.sign(
         {
           reservationId: reserve.reservationId,
-          ticketPrice: scheduleDetails?.Bus?.bus_type?.price,
+          ticketPrice:
+            scheduleDetails?.Bus?.bus_type?.price *
+            scheduleDetails?.Route?.distance,
         },
         process.env.JWT_SECRET,
         { expiresIn: "5m" }
       );
       reserve.dataValues.token = reserveToken;
-      reserve.dataValues.ticketPrice = scheduleDetails?.Bus?.bus_type?.price;
+      reserve.dataValues.ticketPrice =
+        scheduleDetails?.Bus?.bus_type?.price *
+        scheduleDetails?.Route?.distance;
       sendMessageToSQS(reserve);
       await transaction.commit();
       return res.status(201).json({
         reservationToken: reserveToken,
         seatCount: reserve.seatCount,
-        ticketPrice: scheduleDetails?.Bus?.bus_type?.price,
+        ticketPrice:
+          scheduleDetails?.Bus?.bus_type?.price *
+          scheduleDetails?.Route?.distance,
       });
     } catch (error) {
       await transaction.rollback();
@@ -130,7 +136,12 @@ class ReservationService {
         Reservation.findAll({ where: { scheduleId, status: "H" } }),
       ]);
 
-      if (bookings.length === 0 && reservations.length === 0 && res) {
+      if (
+        bookings.length === 0 &&
+        reservations.length === 0 &&
+        res &&
+        busSeatCount
+      ) {
         return res
           .status(404)
           .json({ error: "No bookings or reservations found" });
@@ -147,12 +158,20 @@ class ReservationService {
         0
       );
 
+      if (!busSeatCount) {
+        const data = await this.fetchScheduleDetails(scheduleId);
+
+        busSeatCount = data?.Bus?.seatCount;
+      }
+
       // Return available seats
       if (busSeatCount === 0 && res) {
         return res.status(200).json({ availableSeats: 0 });
       }
 
-      return busSeatCount - (totalBookedSeats + totalReservedSeats);
+      const availSeats = busSeatCount - (totalBookedSeats + totalReservedSeats);
+
+      return res.status(200).json({ availableSeats: availSeats });
     } catch (error) {
       if (res) {
         return res.status(500).json({ error: error.message });
